@@ -307,7 +307,7 @@
         </div>
 
         <h2>GENERATED TONES</h2>
-        <p style="margin-bottom: 15px;">Click any tone to play it. Format: m*ROOT + n*RATIO</p>
+        <p style="margin-bottom: 15px;">Click any tone to play it. Display shows integer ratio relative to root frequency.</p>
         <div class="tone-grid" id="toneGrid"></div>
 
         <div class="research">
@@ -366,6 +366,50 @@
                 return num / den;
             }
             return parseFloat(ratioStr);
+        }
+
+        function gcd(a, b) {
+            a = Math.abs(Math.round(a));
+            b = Math.abs(Math.round(b));
+            while (b !== 0) {
+                const temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+        }
+
+        function decimalToFraction(decimal, tolerance = 0.0001) {
+            // Handle simple cases
+            if (decimal === 1) return "1/1";
+
+            // Convert to fraction using continued fractions method
+            // with a maximum denominator to keep ratios manageable
+            let numerator = 1;
+            let denominator = 1;
+            let minError = Math.abs(decimal - 1);
+
+            // Try different denominators up to 100
+            for (let den = 1; den <= 100; den++) {
+                const num = Math.round(decimal * den);
+                const error = Math.abs(decimal - num / den);
+
+                if (error < minError) {
+                    minError = error;
+                    numerator = num;
+                    denominator = den;
+
+                    // If we found an exact match, stop
+                    if (error < tolerance) break;
+                }
+            }
+
+            // Simplify the fraction
+            const divisor = gcd(numerator, denominator);
+            numerator = numerator / divisor;
+            denominator = denominator / divisor;
+
+            return `${numerator}/${denominator}`;
         }
 
         function playTone(frequency, button) {
@@ -454,9 +498,13 @@
                 freqDisplay.className = 'freq-display';
                 freqDisplay.textContent = freq.toFixed(2) + ' Hz';
 
+                // Calculate the ratio relative to root frequency
+                const relativeRatio = freq / rootHz;
+                const integerRatio = decimalToFraction(relativeRatio);
+
                 const ratioDisplay = document.createElement('span');
                 ratioDisplay.className = 'ratio-display';
-                ratioDisplay.textContent = `${m}*A + ${n}*B`;
+                ratioDisplay.textContent = `${integerRatio} (${m}*A + ${n}*B)`;
 
                 button.appendChild(freqDisplay);
                 button.appendChild(ratioDisplay);
