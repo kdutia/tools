@@ -152,6 +152,14 @@
             opacity: 0.7;
         }
 
+        .interval-name {
+            display: block;
+            font-size: 0.75em;
+            opacity: 0.6;
+            font-style: italic;
+            margin-top: 2px;
+        }
+
         .research {
             border: 2px solid #000;
             padding: 15px;
@@ -447,6 +455,42 @@
             return `${numerator}/${denominator}`;
         }
 
+        function getIntervalName(ratioString) {
+            // Map of common interval ratios to their western music theory names
+            const intervals = {
+                '1/1': 'unison',
+                '16/15': 'minor second',
+                '25/24': 'minor second',
+                '9/8': 'major second',
+                '10/9': 'major second',
+                '6/5': 'minor third',
+                '5/4': 'major third',
+                '4/3': 'perfect fourth',
+                '45/32': 'tritone',
+                '64/45': 'tritone',
+                '7/5': 'tritone',
+                '3/2': 'perfect fifth',
+                '8/5': 'minor sixth',
+                '5/3': 'major sixth',
+                '16/9': 'minor seventh',
+                '9/5': 'minor seventh',
+                '15/8': 'major seventh',
+                '2/1': 'octave',
+                '3/1': 'octave + fifth',
+                '4/1': 'two octaves',
+                '5/2': 'two octaves + major third',
+                '3/4': 'perfect fourth (down)',
+                '2/3': 'perfect fifth (down)',
+                '4/5': 'major third (down)',
+                '5/6': 'minor third (down)',
+                '8/9': 'major second (down)',
+                '9/10': 'major second (down)',
+                '15/16': 'minor second (down)'
+            };
+
+            return intervals[ratioString] || null;
+        }
+
         function playTone(frequency, button) {
             // Attempt to unlock audio on first interaction (Safari iOS requirement)
             if (!audioInitialized && audioContext.state === 'suspended') {
@@ -562,6 +606,15 @@
 
                 button.appendChild(freqDisplay);
                 button.appendChild(ratioDisplay);
+
+                // Add interval name if it's a standard interval
+                const intervalName = getIntervalName(integerRatio);
+                if (intervalName) {
+                    const intervalDisplay = document.createElement('span');
+                    intervalDisplay.className = 'interval-name';
+                    intervalDisplay.textContent = intervalName;
+                    button.appendChild(intervalDisplay);
+                }
 
                 button.addEventListener('click', () => {
                     if (activeOscillators.has(button)) {
