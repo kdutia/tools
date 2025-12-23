@@ -364,14 +364,32 @@
     </div>
 
     <script>
-        // Create AudioContext immediately on page load (don't wait for user interaction)
-        let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // DON'T create AudioContext on page load - Safari iOS requires it to be created within user gesture
+        let audioContext = null;
         let activeOscillators = new Map();
         let audioInitialized = false;
 
-        // Function to unlock/resume audio context
+        // Function to create/unlock audio context within user gesture
         function unlockAudio() {
-            if (audioContext.state === 'suspended') {
+            // Create context within user gesture if it doesn't exist (critical for Safari iOS speakers)
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log('AudioContext created within user gesture, state:', audioContext.state);
+
+                // Monitor state changes (for interrupted state on iOS)
+                audioContext.addEventListener('statechange', () => {
+                    console.log('AudioContext state changed to:', audioContext.state);
+                    if (audioContext.state === 'suspended' || audioContext.state === 'interrupted') {
+                        showAudioWarning();
+                    } else if (audioContext.state === 'running') {
+                        audioInitialized = true;
+                        hideAudioWarning();
+                    }
+                });
+            }
+
+            // Resume if suspended or interrupted
+            if (audioContext.state === 'suspended' || audioContext.state === 'interrupted') {
                 // Resume synchronously within user gesture - critical for Safari iOS
                 audioContext.resume().then(() => {
                     console.log('AudioContext resumed successfully');
@@ -379,8 +397,9 @@
                     hideAudioWarning();
                 }).catch(err => {
                     console.error('Failed to resume AudioContext:', err);
+                    showAudioWarning();
                 });
-            } else {
+            } else if (audioContext.state === 'running') {
                 audioInitialized = true;
                 hideAudioWarning();
             }
@@ -396,8 +415,10 @@
 
         // Check if we need to show the audio warning
         function checkAudioState() {
-            // Safari iOS typically starts in 'suspended' state
-            if (audioContext.state === 'suspended' && !audioInitialized) {
+            // If no context created yet, we need user interaction
+            if (!audioContext && !audioInitialized) {
+                showAudioWarning();
+            } else if (audioContext && (audioContext.state === 'suspended' || audioContext.state === 'interrupted') && !audioInitialized) {
                 showAudioWarning();
             }
         }
@@ -493,10 +514,10 @@
 
         function playTone(frequency, button) {
             // Attempt to unlock audio on first interaction (Safari iOS requirement)
-            if (!audioInitialized && audioContext.state === 'suspended') {
+            if (!audioContext || !audioInitialized || audioContext.state !== 'running') {
                 unlockAudio();
                 // Show warning if unlock didn't work immediately
-                if (audioContext.state === 'suspended') {
+                if (!audioContext || audioContext.state !== 'running') {
                     showAudioWarning();
                     return;
                 }
@@ -505,12 +526,6 @@
             // Stop if already playing
             if (activeOscillators.has(button)) {
                 stopTone(button);
-                return;
-            }
-
-            // Don't try to play if context isn't running
-            if (audioContext.state !== 'running') {
-                showAudioWarning();
                 return;
             }
 
@@ -655,13 +670,13 @@
 
         // Also try to unlock audio on any user interaction (belt and suspenders approach)
         document.addEventListener('touchstart', function tryUnlock() {
-            if (!audioInitialized && audioContext.state === 'suspended') {
+            if (!audioInitialized) {
                 unlockAudio();
             }
         }, { once: true });
 
         document.addEventListener('click', function tryUnlock() {
-            if (!audioInitialized && audioContext.state === 'suspended') {
+            if (!audioInitialized) {
                 unlockAudio();
             }
         }, { once: true });
