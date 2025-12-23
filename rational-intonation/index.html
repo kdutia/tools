@@ -353,13 +353,13 @@
         let audioContext;
         let activeOscillators = new Map();
 
-        function initAudio() {
+        async function initAudio() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
             // Resume audio context if suspended (required by browser autoplay policies)
             if (audioContext.state === 'suspended') {
-                audioContext.resume();
+                await audioContext.resume();
             }
         }
 
@@ -416,8 +416,8 @@
             return `${numerator}/${denominator}`;
         }
 
-        function playTone(frequency, button) {
-            initAudio();
+        async function playTone(frequency, button) {
+            await initAudio();
 
             // Stop if already playing
             if (activeOscillators.has(button)) {
