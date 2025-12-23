@@ -412,8 +412,13 @@
             return `${numerator}/${denominator}`;
         }
 
-        function playTone(frequency, button) {
+        async function playTone(frequency, button) {
             initAudio();
+
+            // Resume audio context if suspended (required for browser autoplay policy)
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
 
             // Stop if already playing
             if (activeOscillators.has(button)) {
