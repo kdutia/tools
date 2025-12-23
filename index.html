@@ -13,8 +13,8 @@
 
         body {
             font-family: 'Courier New', monospace;
-            background: #000;
-            color: #0f0;
+            background: #fff;
+            color: #000;
             padding: 20px;
             line-height: 1.6;
             max-width: 100%;
@@ -28,7 +28,7 @@
 
         h1 {
             font-size: clamp(1.5rem, 5vw, 2.5rem);
-            border: 3px solid #0f0;
+            border: 3px solid #000;
             padding: 15px;
             margin-bottom: 30px;
             text-align: center;
@@ -37,13 +37,13 @@
 
         h2 {
             font-size: clamp(1.2rem, 4vw, 1.8rem);
-            border-bottom: 2px solid #0f0;
+            border-bottom: 2px solid #000;
             padding-bottom: 10px;
             margin: 30px 0 15px 0;
         }
 
         .control-group {
-            border: 2px solid #0f0;
+            border: 2px solid #000;
             padding: 15px;
             margin-bottom: 20px;
         }
@@ -58,9 +58,9 @@
         input[type="number"],
         input[type="text"] {
             width: 100%;
-            background: #000;
-            border: 2px solid #0f0;
-            color: #0f0;
+            background: #fff;
+            border: 2px solid #000;
+            color: #000;
             padding: 12px;
             font-family: 'Courier New', monospace;
             font-size: 16px;
@@ -69,20 +69,20 @@
 
         input:focus {
             outline: none;
-            border-color: #fff;
+            border-color: #666;
         }
 
         .piano-reference {
             font-size: clamp(0.75rem, 2.5vw, 0.85rem);
-            opacity: 0.8;
+            opacity: 0.7;
             margin-top: 5px;
             padding: 10px;
-            border-left: 2px solid #0f0;
+            border-left: 2px solid #000;
         }
 
         button {
-            background: #0f0;
-            color: #000;
+            background: #000;
+            color: #fff;
             border: none;
             padding: 15px 25px;
             font-family: 'Courier New', monospace;
@@ -96,7 +96,7 @@
         }
 
         button:hover {
-            background: #fff;
+            background: #333;
         }
 
         button:active {
@@ -116,9 +116,9 @@
         }
 
         .tone-button {
-            background: #000;
-            color: #0f0;
-            border: 2px solid #0f0;
+            background: #fff;
+            color: #000;
+            border: 2px solid #000;
             padding: 15px 10px;
             font-family: 'Courier New', monospace;
             font-size: clamp(0.75rem, 2.5vw, 0.9rem);
@@ -130,14 +130,14 @@
         }
 
         .tone-button:hover {
-            background: #0f0;
-            color: #000;
+            background: #000;
+            color: #fff;
         }
 
         .tone-button.playing {
-            background: #fff;
-            color: #000;
-            border-color: #fff;
+            background: #333;
+            color: #fff;
+            border-color: #333;
         }
 
         .freq-display {
@@ -149,11 +149,11 @@
         .ratio-display {
             display: block;
             font-size: 0.85em;
-            opacity: 0.8;
+            opacity: 0.7;
         }
 
         .research {
-            border: 2px solid #0f0;
+            border: 2px solid #000;
             padding: 15px;
             margin-top: 40px;
             font-size: clamp(0.8rem, 2.5vw, 0.9rem);
@@ -182,10 +182,79 @@
 
         .citation {
             font-size: 0.85em;
-            opacity: 0.8;
+            opacity: 0.7;
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid #0f0;
+            border-top: 1px solid #000;
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #000;
+                color: #fff;
+            }
+
+            h1 {
+                border-color: #fff;
+            }
+
+            h2 {
+                border-bottom-color: #fff;
+            }
+
+            .control-group {
+                border-color: #fff;
+            }
+
+            input[type="number"],
+            input[type="text"] {
+                background: #000;
+                border-color: #fff;
+                color: #fff;
+            }
+
+            input:focus {
+                border-color: #999;
+            }
+
+            .piano-reference {
+                border-left-color: #fff;
+            }
+
+            button {
+                background: #fff;
+                color: #000;
+            }
+
+            button:hover {
+                background: #ccc;
+            }
+
+            .tone-button {
+                background: #000;
+                color: #fff;
+                border-color: #fff;
+            }
+
+            .tone-button:hover {
+                background: #fff;
+                color: #000;
+            }
+
+            .tone-button.playing {
+                background: #ccc;
+                color: #000;
+                border-color: #ccc;
+            }
+
+            .research {
+                border-color: #fff;
+            }
+
+            .citation {
+                border-top-color: #fff;
+            }
         }
 
         @media (max-width: 600px) {
