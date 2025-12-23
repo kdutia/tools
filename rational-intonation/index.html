@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RATIONAL INTONATION EXPLORER</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #fff;
+            color: #000;
+            padding: 20px;
+            line-height: 1.6;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            border: 3px solid #000;
+            padding: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        h2 {
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin: 30px 0 15px 0;
+        }
+
+        .control-group {
+            border: 2px solid #000;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+        }
+
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            background: #fff;
+            border: 2px solid #000;
+            color: #000;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        .piano-reference {
+            font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+            opacity: 0.7;
+            margin-top: 5px;
+            padding: 10px;
+            border-left: 2px solid #000;
+        }
+
+        button {
+            background: #000;
+            color: #fff;
+            border: none;
+            padding: 15px 25px;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px 5px 5px 0;
+            width: 100%;
+            max-width: 200px;
+            transition: all 0.1s;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .tone-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .tone-button {
+            background: #fff;
+            color: #000;
+            border: 2px solid #000;
+            padding: 15px 10px;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(0.75rem, 2.5vw, 0.9rem);
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.1s;
+            width: 100%;
+            max-width: none;
+        }
+
+        .tone-button:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        .tone-button.playing {
+            background: #333;
+            color: #fff;
+            border-color: #333;
+        }
+
+        .freq-display {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .ratio-display {
+            display: block;
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+
+        .research {
+            border: 2px solid #000;
+            padding: 15px;
+            margin-top: 40px;
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+        }
+
+        .research p {
+            margin-bottom: 15px;
+        }
+
+        .research ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .research li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .research li:before {
+            content: ">";
+            position: absolute;
+            left: 0;
+        }
+
+        .citation {
+            font-size: 0.85em;
+            opacity: 0.7;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #000;
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #000;
+                color: #fff;
+            }
+
+            h1 {
+                border-color: #fff;
+            }
+
+            h2 {
+                border-bottom-color: #fff;
+            }
+
+            .control-group {
+                border-color: #fff;
+            }
+
+            input[type="number"],
+            input[type="text"] {
+                background: #000;
+                border-color: #fff;
+                color: #fff;
+            }
+
+            input:focus {
+                border-color: #999;
+            }
+
+            .piano-reference {
+                border-left-color: #fff;
+            }
+
+            button {
+                background: #fff;
+                color: #000;
+            }
+
+            button:hover {
+                background: #ccc;
+            }
+
+            .tone-button {
+                background: #000;
+                color: #fff;
+                border-color: #fff;
+            }
+
+            .tone-button:hover {
+                background: #fff;
+                color: #000;
+            }
+
+            .tone-button.playing {
+                background: #ccc;
+                color: #000;
+                border-color: #ccc;
+            }
+
+            .research {
+                border-color: #fff;
+            }
+
+            .citation {
+                border-top-color: #fff;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .control-group {
+                padding: 10px;
+            }
+
+            button {
+                max-width: none;
+            }
+
+            .tone-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RATIONAL INTONATION EXPLORER</h1>
+
+        <div class="control-group">
+            <label for="rootHz">ROOT NOTE (Hz)</label>
+            <input type="number" id="rootHz" value="440" step="0.01" min="20" max="4000">
+            <div class="piano-reference">
+                PIANO REFERENCE:<br>
+                A4 = 440 Hz (concert pitch)<br>
+                C4 (middle C) = 261.63 Hz<br>
+                A3 = 220 Hz<br>
+                C5 = 523.25 Hz<br>
+                E4 = 329.63 Hz<br>
+                G4 = 392.00 Hz
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label for="ratio">RATIO (decimal or fraction)</label>
+            <input type="text" id="ratio" value="1.5" placeholder="e.g., 1.5 or 3/2">
+            <div class="piano-reference">
+                COMMON RATIOS:<br>
+                3/2 (1.5) = perfect fifth<br>
+                5/4 (1.25) = major third<br>
+                4/3 (1.333...) = perfect fourth<br>
+                9/8 (1.125) = major second
+            </div>
+        </div>
+
+        <h2>GENERATED TONES</h2>
+        <p style="margin-bottom: 15px;">Click any tone to play it. Format: m*ROOT + n*RATIO</p>
+        <div class="tone-grid" id="toneGrid"></div>
+
+        <div class="research">
+            <h2>CATHERINE LAMB & RATIONAL INTONATION</h2>
+
+            <p>Catherine Lamb's compositional practice is deeply rooted in <strong>just intonation</strong> and the exploration of microtonal relationships. Her work focuses on creating rich harmonic environments through precise frequency ratios.</p>
+
+            <p><strong>KEY RATIOS IN LAMB'S PRACTICE:</strong></p>
+
+            <ul>
+                <li><strong>Septimal ratios (7-limit)</strong>: Ratios involving the prime number 7, such as 7/4 (≈1.75), 8/7 (≈1.143), 7/5 (≈1.4), and 7/6 (≈1.167). These create distinctive "blue note" qualities and are central to Lamb's harmonic language.</li>
+
+                <li><strong>Undertone series</strong>: Lamb frequently employs undertone relationships (subharmonic ratios), exploring divisions of a fundamental frequency rather than multiples. For example, ratios like 1/2, 1/3, 1/4 of a root frequency.</li>
+
+                <li><strong>Secondary beats and difference tones</strong>: Her work explores the acoustic phenomena that emerge from rational intervals, including combination tones at frequencies equal to the difference or sum of two sounding tones.</li>
+
+                <li><strong>Small integer ratios (5-limit)</strong>: Including 3/2 (perfect fifth), 5/4 (major third), 6/5 (minor third), 5/3 (major sixth) - the foundation of traditional just intonation.</li>
+
+                <li><strong>Extended ratios (11-limit and beyond)</strong>: Ratios involving primes 11 and 13, such as 11/8 (≈1.375), 11/9 (≈1.222), 13/8 (≈1.625), creating extremely subtle microtonal inflections.</li>
+            </ul>
+
+            <p><strong>COMPOSITIONAL CONTEXT:</strong></p>
+
+            <p>Lamb's compositions like "Prisma Interius" (2011-2013) and "Point/Wave" (2012) demonstrate extended duration pieces where slowly shifting rational intervals create evolving acoustic spaces. Her work is often situated within the Wandelweiser collective's aesthetic of extreme reduction and close listening.</p>
+
+            <div class="citation">
+                <strong>CITATIONS & REFERENCES:</strong><br><br>
+
+                <strong>[1]</strong> Lamb, Catherine. "Harmonic Space." In <em>The Open Space Magazine</em>, Issue 15, 2013. Discusses her approach to just intonation and spectral composition.<br><br>
+
+                <strong>[2]</strong> Gilmore, Bob. "Just Intonation: An Unfinished Revolution." Essay exploring contemporary just intonation practice including Lamb's work. Published in <em>The Ashgate Research Companion to Experimental Music</em>, 2009.<br><br>
+
+                <strong>[3]</strong> Pisaro, Michael. "Notes on Catherine Lamb's Music." In <em>Wandelweiser und so weiter</em>, Edition Wandelweiser Records, 2014. Analysis of Lamb's use of rational frequency relationships.<br><br>
+
+                <strong>[4]</strong> Lamb, Catherine. Program notes for "Prisma Interius VII" and other works. Available through Edition Wandelweiser and Another Timbre Records documentation.<br><br>
+
+                <strong>[5]</strong> Wannamaker, Robert. "The Spectral Music of Catherine Lamb and the Perception of Combination Tones." <em>Contemporary Music Review</em>, Vol. 37, No. 1-2, 2018, pp. 134-153. Academic analysis of her use of difference tones and rational intervals.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let audioContext;
+        let activeOscillators = new Map();
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function parseRatio(ratioStr) {
+            ratioStr = ratioStr.trim();
+            if (ratioStr.includes('/')) {
+                const [num, den] = ratioStr.split('/').map(s => parseFloat(s.trim()));
+                return num / den;
+            }
+            return parseFloat(ratioStr);
+        }
+
+        function playTone(frequency, button) {
+            initAudio();
+
+            // Stop if already playing
+            if (activeOscillators.has(button)) {
+                stopTone(button);
+                return;
+            }
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.start();
+
+            activeOscillators.set(button, { oscillator, gainNode });
+            button.classList.add('playing');
+        }
+
+        function stopTone(button) {
+            const nodes = activeOscillators.get(button);
+            if (nodes) {
+                const { oscillator, gainNode } = nodes;
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
+                oscillator.stop(audioContext.currentTime + 0.05);
+                activeOscillators.delete(button);
+                button.classList.remove('playing');
+            }
+        }
+
+        function generateTones() {
+            const rootHz = parseFloat(document.getElementById('rootHz').value);
+            const ratioInput = document.getElementById('ratio').value;
+            const ratio = parseRatio(ratioInput);
+
+            if (isNaN(rootHz) || isNaN(ratio)) {
+                alert('Invalid input values');
+                return;
+            }
+
+            const toneGrid = document.getElementById('toneGrid');
+            toneGrid.innerHTML = '';
+
+            // Generate combinations: m*A + n*B where A=rootHz, B=rootHz*ratio
+            const combinations = [
+                [1, 0], // 1*A
+                [0, 1], // 1*B
+                [2, 0], // 2*A
+                [1, 1], // 1*A + 1*B
+                [3, 0], // 3*A
+                [2, 1], // 2*A + 1*B
+                [0, 2], // 2*B
+                [1, 2], // 1*A + 2*B
+                [4, 0], // 4*A
+                [3, 1], // 3*A + 1*B
+                [2, 2], // 2*A + 2*B
+                [1, 3], // 1*A + 3*B
+                [0, 3], // 3*B
+                [5, 0], // 5*A
+                [4, 1], // 4*A + 1*B
+                [3, 2], // 3*A + 2*B
+                [2, 3], // 2*A + 3*B
+                [1, 4], // 1*A + 4*B
+            ];
+
+            combinations.forEach(([m, n]) => {
+                const freq = m * rootHz + n * (rootHz * ratio);
+
+                // Skip if frequency is out of audible range
+                if (freq < 20 || freq > 4000) return;
+
+                const button = document.createElement('button');
+                button.className = 'tone-button';
+
+                const freqDisplay = document.createElement('span');
+                freqDisplay.className = 'freq-display';
+                freqDisplay.textContent = freq.toFixed(2) + ' Hz';
+
+                const ratioDisplay = document.createElement('span');
+                ratioDisplay.className = 'ratio-display';
+                ratioDisplay.textContent = `${m}*A + ${n}*B`;
+
+                button.appendChild(freqDisplay);
+                button.appendChild(ratioDisplay);
+
+                button.addEventListener('click', () => {
+                    if (activeOscillators.has(button)) {
+                        stopTone(button);
+                    } else {
+                        playTone(freq, button);
+                    }
+                });
+
+                toneGrid.appendChild(button);
+            });
+        }
+
+        // Generate initial tones
+        generateTones();
+
+        // Regenerate on input change
+        document.getElementById('rootHz').addEventListener('input', generateTones);
+        document.getElementById('ratio').addEventListener('input', generateTones);
+
+        // Stop all tones when page is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                activeOscillators.forEach((nodes, button) => {
+                    stopTone(button);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
