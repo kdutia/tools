@@ -415,8 +415,8 @@
             </div>
             <div class="control-group">
                 <label for="threshold">THRESHOLD</label>
-                <div class="value-display">CURRENT: <span id="thresholdValue">0.30</span></div>
-                <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.3">
+                <div class="value-display">CURRENT: <span id="thresholdValue">0.10</span></div>
+                <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.1">
             </div>
             <div class="control-group">
                 <label for="fadeTime">FADE IN/OUT TIME</label>
@@ -880,52 +880,80 @@
                 maxSpectrum[f] = max;
             }
 
-            // Find peaks
+            // Find peaks using adaptive thresholding across frequency bands
             const peaks = [];
             const threshold = parseFloat(thresholdInput.value);
 
-            // Find overall maximum for normalization
-            let overallMax = 0;
-            for (let i = 0; i < maxSpectrum.length; i++) {
-                overallMax = Math.max(overallMax, maxSpectrum[i]);
-            }
+            // Define frequency bands for adaptive thresholding
+            // This ensures we find peaks across the full spectrum, not just the dominant ones
+            const bands = [
+                { min: 20, max: 250, name: 'Low' },         // Bass frequencies
+                { min: 250, max: 2000, name: 'Mid-Low' },   // Lower midrange
+                { min: 2000, max: 6000, name: 'Mid-High' }, // Upper midrange
+                { min: 6000, max: sampleRate / 2, name: 'High' } // High frequencies
+            ];
 
-            // Use a sliding window approach for peak detection
+            // Find peaks in each frequency band separately
             const windowSize = 5; // Look at neighbors within this range
+            const allPeaks = [];
 
-            for (let i = windowSize; i < maxSpectrum.length - windowSize; i++) {
-                const current = maxSpectrum[i];
+            bands.forEach(band => {
+                const bandStartBin = Math.floor(band.min / freqResolution);
+                const bandEndBin = Math.min(Math.floor(band.max / freqResolution), maxSpectrum.length - 1);
 
-                // Skip if below threshold
-                if (current < threshold * overallMax) continue;
+                // Find maximum in this band for normalization
+                let bandMax = 0;
+                for (let i = bandStartBin; i <= bandEndBin; i++) {
+                    bandMax = Math.max(bandMax, maxSpectrum[i]);
+                }
 
-                // Check if it's a local maximum within the window
-                let isLocalMax = true;
-                for (let j = i - windowSize; j <= i + windowSize; j++) {
-                    if (j !== i && maxSpectrum[j] >= current) {
-                        isLocalMax = false;
-                        break;
+                // Skip band if it's too quiet
+                if (bandMax < 1e-10) return;
+
+                // Find local peaks in this band
+                for (let i = Math.max(windowSize, bandStartBin); i <= Math.min(bandEndBin, maxSpectrum.length - windowSize - 1); i++) {
+                    const current = maxSpectrum[i];
+
+                    // Skip if below threshold (relative to this band's maximum)
+                    if (current < threshold * bandMax) continue;
+
+                    // Check if it's a local maximum within the window
+                    let isLocalMax = true;
+                    for (let j = Math.max(0, i - windowSize); j <= Math.min(maxSpectrum.length - 1, i + windowSize); j++) {
+                        if (j !== i && maxSpectrum[j] >= current) {
+                            isLocalMax = false;
+                            break;
+                        }
+                    }
+
+                    if (isLocalMax) {
+                        const frequency = i * freqResolution;
+
+                        allPeaks.push({
+                            frequency: frequency,
+                            magnitude: current,
+                            bin: i,
+                            band: band.name
+                        });
                     }
                 }
+            });
 
-                if (isLocalMax) {
-                    const frequency = i * freqResolution;
+            // Remove duplicates (peaks found in multiple bands)
+            const uniquePeaks = [];
+            const seenBins = new Set();
 
-                    // Skip very low frequencies (below 20 Hz) as they're often noise
-                    if (frequency < 20) continue;
-
-                    peaks.push({
-                        frequency: frequency,
-                        magnitude: current,
-                        bin: i
-                    });
+            allPeaks.forEach(peak => {
+                if (!seenBins.has(peak.bin)) {
+                    seenBins.add(peak.bin);
+                    uniquePeaks.push(peak);
                 }
-            }
+            });
 
             // Sort by magnitude and take top N
             const numPeaks = parseInt(peakCountInput.value);
-            peaks.sort((a, b) => b.magnitude - a.magnitude);
-            return peaks.slice(0, numPeaks);
+            uniquePeaks.sort((a, b) => b.magnitude - a.magnitude);
+            return uniquePeaks.slice(0, numPeaks);
         }
 
         function displayFrequencies(frequencies) {
