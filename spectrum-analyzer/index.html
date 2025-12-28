@@ -705,12 +705,19 @@
             const channelData = buffer.getChannelData(0); // Use first channel
             const fftSize = 4096; // Larger FFT for better frequency resolution
             const hopSize = Math.floor(fftSize / 4);
-            const windowCount = Math.floor((channelData.length - fftSize) / hopSize);
+            const totalWindowCount = Math.floor((channelData.length - fftSize) / hopSize);
+
+            // Limit analysis to avoid performance issues with very long files
+            // For long files, sample windows evenly throughout the duration
+            const maxWindows = 2000;
+            const windowCount = Math.min(totalWindowCount, maxWindows);
+            const skipFactor = Math.max(1, Math.floor(totalWindowCount / maxWindows));
 
             const spectrogram = [];
 
             for (let i = 0; i < windowCount; i++) {
-                const offset = i * hopSize;
+                const windowIndex = i * skipFactor;
+                const offset = windowIndex * hopSize;
                 const segment = channelData.slice(offset, offset + fftSize);
 
                 // Apply Hanning window
@@ -862,32 +869,51 @@
             const fftSize = spectrogram[0].length * 2; // Original FFT size
             const freqResolution = sampleRate / fftSize;
 
-            // Average magnitude across all time steps for each frequency bin
-            const avgSpectrum = new Float32Array(spectrogram[0].length);
+            // Use maximum magnitude across all time steps for each frequency bin
+            // This better captures transient peaks that might be averaged out
+            const maxSpectrum = new Float32Array(spectrogram[0].length);
             for (let f = 0; f < spectrogram[0].length; f++) {
-                let sum = 0;
+                let max = 0;
                 for (let t = 0; t < spectrogram.length; t++) {
-                    sum += spectrogram[t][f];
+                    max = Math.max(max, spectrogram[t][f]);
                 }
-                avgSpectrum[f] = sum / spectrogram.length;
+                maxSpectrum[f] = max;
             }
 
             // Find peaks
             const peaks = [];
             const threshold = parseFloat(thresholdInput.value);
-            const maxMagnitude = Math.max(...avgSpectrum);
 
-            for (let i = 2; i < avgSpectrum.length - 2; i++) {
-                const current = avgSpectrum[i];
+            // Find overall maximum for normalization
+            let overallMax = 0;
+            for (let i = 0; i < maxSpectrum.length; i++) {
+                overallMax = Math.max(overallMax, maxSpectrum[i]);
+            }
 
-                // Check if it's a local maximum and above threshold
-                if (current > avgSpectrum[i - 1] &&
-                    current > avgSpectrum[i + 1] &&
-                    current > avgSpectrum[i - 2] &&
-                    current > avgSpectrum[i + 2] &&
-                    current > threshold * maxMagnitude) {
+            // Use a sliding window approach for peak detection
+            const windowSize = 5; // Look at neighbors within this range
 
+            for (let i = windowSize; i < maxSpectrum.length - windowSize; i++) {
+                const current = maxSpectrum[i];
+
+                // Skip if below threshold
+                if (current < threshold * overallMax) continue;
+
+                // Check if it's a local maximum within the window
+                let isLocalMax = true;
+                for (let j = i - windowSize; j <= i + windowSize; j++) {
+                    if (j !== i && maxSpectrum[j] >= current) {
+                        isLocalMax = false;
+                        break;
+                    }
+                }
+
+                if (isLocalMax) {
                     const frequency = i * freqResolution;
+
+                    // Skip very low frequencies (below 20 Hz) as they're often noise
+                    if (frequency < 20) continue;
+
                     peaks.push({
                         frequency: frequency,
                         magnitude: current,
