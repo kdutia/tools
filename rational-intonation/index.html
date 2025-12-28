@@ -80,6 +80,37 @@
             border-left: 2px solid #000;
         }
 
+        .current-value {
+            font-size: clamp(0.85rem, 3vw, 0.95rem);
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background: #f0f0f0;
+            border: 2px solid #000;
+            font-weight: bold;
+        }
+
+        .current-value-label {
+            opacity: 0.6;
+            font-weight: normal;
+        }
+
+        input.invalid {
+            border-color: #f00;
+            background: #ffe0e0;
+        }
+
+        .validation-message {
+            color: #f00;
+            font-size: 0.85rem;
+            margin-top: -5px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        .validation-message.show {
+            display: block;
+        }
+
         button {
             background: #000;
             color: #fff;
@@ -263,6 +294,16 @@
             .citation {
                 border-top-color: #fff;
             }
+
+            .current-value {
+                background: #1a1a1a;
+                border-color: #fff;
+            }
+
+            input.invalid {
+                border-color: #f00;
+                background: #300;
+            }
         }
 
         @media (max-width: 600px) {
@@ -290,7 +331,11 @@
 
         <div class="control-group">
             <label for="rootHz">ROOT NOTE (Hz)</label>
-            <input type="number" id="rootHz" value="440" step="0.01" min="20" max="4000">
+            <div class="current-value">
+                <span class="current-value-label">CURRENT: </span><span id="currentRootHz">440</span> Hz
+            </div>
+            <input type="number" id="rootHz" value="440" step="0.01" min="20" max="4000" placeholder="Type and press Enter to apply">
+            <div class="validation-message" id="rootHzError">Invalid frequency value</div>
             <div class="piano-reference">
                 PIANO REFERENCE:<br>
                 A4 = 440 Hz (concert pitch)<br>
@@ -298,19 +343,25 @@
                 A3 = 220 Hz<br>
                 C5 = 523.25 Hz<br>
                 E4 = 329.63 Hz<br>
-                G4 = 392.00 Hz
+                G4 = 392.00 Hz<br>
+                <em>Press Enter to apply changes</em>
             </div>
         </div>
 
         <div class="control-group">
             <label for="ratio">RATIO (decimal or fraction)</label>
-            <input type="text" id="ratio" value="1.5" placeholder="e.g., 1.5 or 3/2">
+            <div class="current-value">
+                <span class="current-value-label">CURRENT: </span><span id="currentRatio">1.5</span>
+            </div>
+            <input type="text" id="ratio" value="1.5" placeholder="Type and press Enter to apply">
+            <div class="validation-message" id="ratioError">Invalid ratio value</div>
             <div class="piano-reference">
                 COMMON RATIOS:<br>
                 3/2 (1.5) = perfect fifth<br>
                 5/4 (1.25) = major third<br>
                 4/3 (1.333...) = perfect fourth<br>
-                9/8 (1.125) = major second
+                9/8 (1.125) = major second<br>
+                <em>Press Enter to apply changes</em>
             </div>
         </div>
 
@@ -368,6 +419,10 @@
         let audioContext = null;
         let activeOscillators = new Map();
         let audioInitialized = false;
+
+        // Store current applied values
+        let currentAppliedRootHz = 440;
+        let currentAppliedRatio = '1.5';
 
         // Function to create/unlock audio context within user gesture
         async function unlockAudio() {
@@ -576,15 +631,64 @@
             }
         }
 
-        function generateTones() {
-            const rootHz = parseFloat(document.getElementById('rootHz').value);
-            const ratioInput = document.getElementById('ratio').value;
-            const ratio = parseRatio(ratioInput);
+        function validateAndApplyRootHz() {
+            const input = document.getElementById('rootHz');
+            const errorDiv = document.getElementById('rootHzError');
+            const currentDisplay = document.getElementById('currentRootHz');
+            const value = parseFloat(input.value);
 
-            if (isNaN(rootHz) || isNaN(ratio)) {
-                alert('Invalid input values');
-                return;
+            // Clear previous validation state
+            input.classList.remove('invalid');
+            errorDiv.classList.remove('show');
+
+            if (isNaN(value) || value < 20 || value > 4000) {
+                input.classList.add('invalid');
+                errorDiv.classList.add('show');
+                errorDiv.textContent = 'Invalid frequency (must be 20-4000 Hz)';
+                return false;
             }
+
+            // Apply the value
+            currentAppliedRootHz = value;
+            currentDisplay.textContent = value;
+            input.classList.remove('invalid');
+            errorDiv.classList.remove('show');
+            return true;
+        }
+
+        function validateAndApplyRatio() {
+            const input = document.getElementById('ratio');
+            const errorDiv = document.getElementById('ratioError');
+            const currentDisplay = document.getElementById('currentRatio');
+            const ratioInput = input.value.trim();
+
+            // Clear previous validation state
+            input.classList.remove('invalid');
+            errorDiv.classList.remove('show');
+
+            try {
+                const ratio = parseRatio(ratioInput);
+                if (isNaN(ratio) || ratio <= 0) {
+                    throw new Error('Invalid ratio');
+                }
+
+                // Apply the value
+                currentAppliedRatio = ratioInput;
+                currentDisplay.textContent = ratioInput;
+                input.classList.remove('invalid');
+                errorDiv.classList.remove('show');
+                return true;
+            } catch (e) {
+                input.classList.add('invalid');
+                errorDiv.classList.add('show');
+                errorDiv.textContent = 'Invalid ratio (e.g., 1.5 or 3/2)';
+                return false;
+            }
+        }
+
+        function generateTones() {
+            const rootHz = currentAppliedRootHz;
+            const ratio = parseRatio(currentAppliedRatio);
 
             const toneGrid = document.getElementById('toneGrid');
             toneGrid.innerHTML = '';
@@ -668,9 +772,39 @@
         // Check audio state after page load
         setTimeout(checkAudioState, 100);
 
-        // Regenerate on input change
-        document.getElementById('rootHz').addEventListener('input', generateTones);
-        document.getElementById('ratio').addEventListener('input', generateTones);
+        // Apply changes only on Enter key press
+        document.getElementById('rootHz').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (validateAndApplyRootHz()) {
+                    generateTones();
+                }
+            }
+        });
+
+        document.getElementById('ratio').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (validateAndApplyRatio()) {
+                    generateTones();
+                }
+            }
+        });
+
+        // Clear validation state when user starts typing
+        document.getElementById('rootHz').addEventListener('input', (e) => {
+            const input = e.target;
+            const errorDiv = document.getElementById('rootHzError');
+            input.classList.remove('invalid');
+            errorDiv.classList.remove('show');
+        });
+
+        document.getElementById('ratio').addEventListener('input', (e) => {
+            const input = e.target;
+            const errorDiv = document.getElementById('ratioError');
+            input.classList.remove('invalid');
+            errorDiv.classList.remove('show');
+        });
 
         // Stop all tones when page is hidden
         document.addEventListener('visibilitychange', () => {
