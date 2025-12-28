@@ -121,11 +121,18 @@
             padding: 15px;
             text-align: left;
             transition: all 0.1s;
+            cursor: pointer;
         }
 
         .frequency-item:hover {
             background: #000;
             color: #fff;
+        }
+
+        .frequency-item.playing {
+            background: #333;
+            color: #fff;
+            border-color: #333;
         }
 
         .frequency-value {
@@ -313,6 +320,12 @@
                 color: #000;
             }
 
+            .frequency-item.playing {
+                background: #ccc;
+                color: #000;
+                border-color: #ccc;
+            }
+
             .info-section {
                 border-color: #fff;
             }
@@ -405,6 +418,25 @@
                 <div class="value-display">CURRENT: <span id="thresholdValue">0.30</span></div>
                 <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.3">
             </div>
+            <div class="control-group">
+                <label for="fadeTime">FADE IN/OUT TIME</label>
+                <div class="value-display">CURRENT: <span id="fadeTimeValue">100</span> ms</div>
+                <input type="range" id="fadeTime" min="0" max="10000" value="100" step="10">
+            </div>
+        </div>
+
+        <div class="playback-section hidden" id="playbackSection">
+            <h2>AUDIO PLAYBACK</h2>
+            <div id="audioWarning" style="display: none; background: #ffeb3b; color: #000; padding: 15px; margin-bottom: 15px; border: 2px solid #000;">
+                <strong>⚠️ AUDIO INITIALIZATION REQUIRED</strong><br>
+                Click the button below to enable audio playback (required on iOS/Safari):
+                <br><br>
+                <button id="initAudioBtn" style="background: #000; color: #fff; padding: 12px 20px; cursor: pointer; border: none; font-family: 'Courier New', monospace; font-weight: bold;">INITIALIZE AUDIO</button>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button id="playAudioBtn" style="background: #000; color: #fff; padding: 12px 20px; cursor: pointer; border: none; font-family: 'Courier New', monospace; font-weight: bold;">PLAY AUDIO FILE</button>
+                <button id="stopAudioBtn" style="background: #000; color: #fff; padding: 12px 20px; cursor: pointer; border: none; font-family: 'Courier New', monospace; font-weight: bold;" disabled>STOP</button>
+            </div>
         </div>
 
         <div class="loading hidden" id="loading">Analyzing audio...</div>
@@ -415,7 +447,7 @@
 
         <div class="frequencies-section hidden" id="frequenciesSection">
             <h2>PROMINENT FREQUENCIES</h2>
-            <p style="margin-bottom: 15px;">These are the dominant frequencies detected in your audio. You can use these as the foundation for musical scales.</p>
+            <p style="margin-bottom: 15px;">These are the dominant frequencies detected in your audio. Click any frequency to play it as a sine tone.</p>
             <div class="frequency-list" id="frequencyList"></div>
         </div>
 
@@ -444,9 +476,173 @@
         const peakCountInput = document.getElementById('peakCount');
         const thresholdInput = document.getElementById('threshold');
         const thresholdValue = document.getElementById('thresholdValue');
+        const fadeTimeInput = document.getElementById('fadeTime');
+        const fadeTimeValue = document.getElementById('fadeTimeValue');
+        const playbackSection = document.getElementById('playbackSection');
 
         let audioBuffer = null;
         let audioContext = null;
+        let activeOscillators = new Map();
+        let audioInitialized = false;
+        let fadeTimeMs = 100;
+        let audioSourceNode = null;
+
+        // Audio initialization functions
+        async function unlockAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log('AudioContext created within user gesture, state:', audioContext.state);
+
+                audioContext.addEventListener('statechange', () => {
+                    console.log('AudioContext state changed to:', audioContext.state);
+                    if (audioContext.state === 'suspended' || audioContext.state === 'interrupted') {
+                        showAudioWarning();
+                    } else if (audioContext.state === 'running') {
+                        audioInitialized = true;
+                        hideAudioWarning();
+                    }
+                });
+
+                try {
+                    const buffer = audioContext.createBuffer(1, 1, 22050);
+                    const source = audioContext.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(audioContext.destination);
+                    source.start(0);
+                    console.log('Silent buffer played to unlock iOS audio');
+                } catch (err) {
+                    console.error('Failed to play unlock buffer:', err);
+                }
+            }
+
+            if (audioContext.state === 'suspended' || audioContext.state === 'interrupted') {
+                try {
+                    await audioContext.resume();
+                    console.log('AudioContext resumed successfully, state:', audioContext.state);
+                    audioInitialized = true;
+                    hideAudioWarning();
+                } catch (err) {
+                    console.error('Failed to resume AudioContext:', err);
+                    showAudioWarning();
+                }
+            } else if (audioContext.state === 'running') {
+                console.log('AudioContext already running');
+                audioInitialized = true;
+                hideAudioWarning();
+            }
+        }
+
+        function showAudioWarning() {
+            document.getElementById('audioWarning').style.display = 'block';
+        }
+
+        function hideAudioWarning() {
+            document.getElementById('audioWarning').style.display = 'none';
+        }
+
+        function checkAudioState() {
+            if (!audioContext && !audioInitialized) {
+                showAudioWarning();
+            } else if (audioContext && (audioContext.state === 'suspended' || audioContext.state === 'interrupted') && !audioInitialized) {
+                showAudioWarning();
+            }
+        }
+
+        async function playTone(frequency, element) {
+            if (!audioContext || !audioInitialized || audioContext.state !== 'running') {
+                await unlockAudio();
+                if (!audioContext || audioContext.state !== 'running') {
+                    showAudioWarning();
+                    return;
+                }
+            }
+
+            if (activeOscillators.has(element)) {
+                stopTone(element);
+                return;
+            }
+
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+                const fadeTimeSec = fadeTimeMs / 1000;
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + fadeTimeSec);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.start();
+
+                activeOscillators.set(element, { oscillator, gainNode });
+                element.classList.add('playing');
+            } catch (err) {
+                console.error('Failed to play tone:', err);
+                showAudioWarning();
+            }
+        }
+
+        function stopTone(element) {
+            const nodes = activeOscillators.get(element);
+            if (nodes) {
+                const { oscillator, gainNode } = nodes;
+                const fadeTimeSec = fadeTimeMs / 1000;
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + fadeTimeSec);
+                oscillator.stop(audioContext.currentTime + fadeTimeSec);
+                activeOscillators.delete(element);
+                element.classList.remove('playing');
+            }
+        }
+
+        async function playAudioFile() {
+            if (!audioBuffer) return;
+
+            if (!audioContext || !audioInitialized || audioContext.state !== 'running') {
+                await unlockAudio();
+                if (!audioContext || audioContext.state !== 'running') {
+                    showAudioWarning();
+                    return;
+                }
+            }
+
+            stopAudioFile();
+
+            try {
+                audioSourceNode = audioContext.createBufferSource();
+                audioSourceNode.buffer = audioBuffer;
+                audioSourceNode.connect(audioContext.destination);
+                audioSourceNode.start(0);
+
+                document.getElementById('playAudioBtn').disabled = true;
+                document.getElementById('stopAudioBtn').disabled = false;
+
+                audioSourceNode.onended = () => {
+                    document.getElementById('playAudioBtn').disabled = false;
+                    document.getElementById('stopAudioBtn').disabled = true;
+                    audioSourceNode = null;
+                };
+            } catch (err) {
+                console.error('Failed to play audio file:', err);
+                showAudioWarning();
+            }
+        }
+
+        function stopAudioFile() {
+            if (audioSourceNode) {
+                try {
+                    audioSourceNode.stop();
+                } catch (err) {
+                    console.error('Error stopping audio:', err);
+                }
+                audioSourceNode = null;
+                document.getElementById('playAudioBtn').disabled = false;
+                document.getElementById('stopAudioBtn').disabled = true;
+            }
+        }
 
         thresholdInput.addEventListener('input', (e) => {
             thresholdValue.textContent = parseFloat(e.target.value).toFixed(2);
@@ -502,6 +698,7 @@
             loading.classList.add('hidden');
             canvasContainer.classList.remove('hidden');
             frequenciesSection.classList.remove('hidden');
+            playbackSection.classList.remove('hidden');
         }
 
         function createSpectrogram(buffer) {
@@ -729,9 +926,63 @@
                 item.appendChild(label);
                 item.appendChild(magnitude);
 
+                // Make frequency item clickable to play tone
+                item.addEventListener('click', () => {
+                    if (activeOscillators.has(item)) {
+                        stopTone(item);
+                    } else {
+                        playTone(freq.frequency, item);
+                    }
+                });
+
                 frequencyList.appendChild(item);
             });
         }
+
+        // Event listeners for new controls
+        fadeTimeInput.addEventListener('input', (e) => {
+            fadeTimeMs = parseInt(e.target.value);
+            fadeTimeValue.textContent = fadeTimeMs;
+        });
+
+        document.getElementById('initAudioBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            unlockAudio();
+        });
+
+        document.getElementById('playAudioBtn').addEventListener('click', () => {
+            playAudioFile();
+        });
+
+        document.getElementById('stopAudioBtn').addEventListener('click', () => {
+            stopAudioFile();
+        });
+
+        // Check audio state after page load
+        setTimeout(checkAudioState, 100);
+
+        // Try to unlock audio on any user interaction
+        document.addEventListener('touchstart', function tryUnlock() {
+            if (!audioInitialized) {
+                unlockAudio();
+            }
+        }, { once: true });
+
+        document.addEventListener('click', function tryUnlock() {
+            if (!audioInitialized) {
+                unlockAudio();
+            }
+        }, { once: true });
+
+        // Stop all tones when page is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                activeOscillators.forEach((nodes, element) => {
+                    stopTone(element);
+                });
+                stopAudioFile();
+            }
+        });
     </script>
 </body>
 </html>
