@@ -67,8 +67,57 @@
             margin-bottom: 10px;
         }
 
+        input[type="range"] {
+            width: 100%;
+            height: 40px;
+            background: transparent;
+            margin-bottom: 10px;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-track {
+            width: 100%;
+            height: 8px;
+            background: #000;
+            border: 2px solid #000;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 30px;
+            width: 30px;
+            background: #000;
+            cursor: pointer;
+            border: 2px solid #000;
+        }
+
+        input[type="range"]::-moz-range-track {
+            width: 100%;
+            height: 8px;
+            background: #000;
+            border: 2px solid #000;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            height: 26px;
+            width: 26px;
+            background: #000;
+            cursor: pointer;
+            border: 2px solid #000;
+            border-radius: 0;
+        }
+
         input:focus {
             outline: none;
+            border-color: #666;
+        }
+
+        input[type="range"]:focus::-webkit-slider-thumb {
+            border-color: #666;
+        }
+
+        input[type="range"]:focus::-moz-range-thumb {
             border-color: #666;
         }
 
@@ -253,7 +302,35 @@
                 color: #fff;
             }
 
+            input[type="range"]::-webkit-slider-track {
+                background: #fff;
+                border-color: #fff;
+            }
+
+            input[type="range"]::-webkit-slider-thumb {
+                background: #fff;
+                border-color: #fff;
+            }
+
+            input[type="range"]::-moz-range-track {
+                background: #fff;
+                border-color: #fff;
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                background: #fff;
+                border-color: #fff;
+            }
+
             input:focus {
+                border-color: #999;
+            }
+
+            input[type="range"]:focus::-webkit-slider-thumb {
+                border-color: #999;
+            }
+
+            input[type="range"]:focus::-moz-range-thumb {
                 border-color: #999;
             }
 
@@ -365,6 +442,19 @@
             </div>
         </div>
 
+        <div class="control-group">
+            <label for="fadeTime">FADE IN/OUT TIME</label>
+            <div class="current-value">
+                <span class="current-value-label">CURRENT: </span><span id="currentFadeTime">100</span> ms
+            </div>
+            <input type="range" id="fadeTime" min="0" max="10000" value="100" step="10">
+            <div class="piano-reference">
+                Controls how long tones take to fade in when pressed and fade out when released.<br>
+                Range: 0ms (instant) to 10000ms (10 seconds)<br>
+                Default: 100ms
+            </div>
+        </div>
+
         <h2>GENERATED TONES</h2>
         <div id="audioWarning" style="display: none; background: #ffeb3b; color: #000; padding: 15px; margin-bottom: 15px; border: 2px solid #000;">
             <strong>⚠️ AUDIO INITIALIZATION REQUIRED</strong><br>
@@ -423,6 +513,7 @@
         // Store current applied values
         let currentAppliedRootHz = 440;
         let currentAppliedRatio = '1.5';
+        let fadeTimeMs = 100; // Default fade time in milliseconds
 
         // Function to create/unlock audio context within user gesture
         async function unlockAudio() {
@@ -604,8 +695,9 @@
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
 
+                const fadeTimeSec = fadeTimeMs / 1000; // Convert milliseconds to seconds
                 gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + fadeTimeSec);
 
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
@@ -624,8 +716,9 @@
             const nodes = activeOscillators.get(button);
             if (nodes) {
                 const { oscillator, gainNode } = nodes;
-                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
-                oscillator.stop(audioContext.currentTime + 0.05);
+                const fadeTimeSec = fadeTimeMs / 1000; // Convert milliseconds to seconds
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + fadeTimeSec);
+                oscillator.stop(audioContext.currentTime + fadeTimeSec);
                 activeOscillators.delete(button);
                 button.classList.remove('playing');
             }
@@ -804,6 +897,12 @@
             const errorDiv = document.getElementById('ratioError');
             input.classList.remove('invalid');
             errorDiv.classList.remove('show');
+        });
+
+        // Fade time slider event listener
+        document.getElementById('fadeTime').addEventListener('input', (e) => {
+            fadeTimeMs = parseInt(e.target.value);
+            document.getElementById('currentFadeTime').textContent = fadeTimeMs;
         });
 
         // Stop all tones when page is hidden
