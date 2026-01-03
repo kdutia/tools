@@ -923,11 +923,33 @@
         }
 
         async function playTone(frequency, button) {
-            // Attempt to unlock audio on first interaction (Safari iOS requirement)
-            if (!audioContext || !audioInitialized || audioContext.state !== 'running') {
-                await unlockAudio();
+            // Create AudioContext synchronously in user gesture if it doesn't exist (critical for Safari/iOS)
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log('AudioContext created synchronously in playTone, state:', audioContext.state);
+            }
+
+            // Attempt to unlock/resume audio on first interaction (Safari iOS requirement)
+            if (!audioInitialized || audioContext.state !== 'running') {
+                // Resume if suspended
+                if (audioContext.state === 'suspended' || audioContext.state === 'interrupted') {
+                    try {
+                        await audioContext.resume();
+                        console.log('AudioContext resumed successfully, state:', audioContext.state);
+                        audioInitialized = true;
+                        hideAudioWarning();
+                    } catch (err) {
+                        console.error('Failed to resume AudioContext:', err);
+                        showAudioWarning();
+                        return;
+                    }
+                } else if (audioContext.state === 'running') {
+                    audioInitialized = true;
+                    hideAudioWarning();
+                }
+
                 // Check again after unlock attempt
-                if (!audioContext || audioContext.state !== 'running') {
+                if (audioContext.state !== 'running') {
                     showAudioWarning();
                     return;
                 }
