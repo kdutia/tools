@@ -381,6 +381,17 @@
                 border-color: #f00;
                 background: #300;
             }
+
+            select {
+                background: #000 !important;
+                border-color: #fff !important;
+                color: #fff !important;
+            }
+
+            select option {
+                background: #000;
+                color: #fff;
+            }
         }
 
         @media (max-width: 600px) {
@@ -455,6 +466,26 @@
             </div>
         </div>
 
+        <div class="control-group">
+            <label for="modeSelect">JUST INTONATION MODE</label>
+            <select id="modeSelect" style="width: 100%; background: #fff; border: 2px solid #000; color: #000; padding: 12px; font-family: 'Courier New', monospace; font-size: 16px; margin-bottom: 10px; cursor: pointer;">
+                <option value="free">Free Exploration (m*A + n*B)</option>
+                <option value="5-limit-major">5-Limit Just Major Scale</option>
+                <option value="5-limit-minor">5-Limit Just Minor Scale</option>
+                <option value="7-limit-dorian">7-Limit Dorian Mode</option>
+                <option value="7-limit-lydian">7-Limit Lydian Mode</option>
+                <option value="11-limit-neutral">11-Limit Neutral Mode</option>
+                <option value="13-limit-extended">13-Limit Extended Mode</option>
+            </select>
+            <div class="piano-reference">
+                Select a just intonation mode to explore different harmonic systems.<br>
+                <strong>5-limit</strong>: Traditional just intonation (primes 2, 3, 5)<br>
+                <strong>7-limit</strong>: Septimal intervals with distinctive "blue note" qualities<br>
+                <strong>11-limit</strong>: Extended harmony with neutral intervals (used by Kali Malone)<br>
+                <strong>13-limit</strong>: Extremely subtle microtonal inflections (used by Ben Johnston)
+            </div>
+        </div>
+
         <h2>GENERATED TONES</h2>
         <div id="audioWarning" style="display: none; background: #ffeb3b; color: #000; padding: 15px; margin-bottom: 15px; border: 2px solid #000;">
             <strong>⚠️ AUDIO INITIALIZATION REQUIRED</strong><br>
@@ -488,6 +519,32 @@
 
             <p>Lamb's compositions like "Prisma Interius" (2011-2013) and "Point/Wave" (2012) demonstrate extended duration pieces where slowly shifting rational intervals create evolving acoustic spaces. Her work is often situated within the Wandelweiser collective's aesthetic of extreme reduction and close listening.</p>
 
+            <h2>KALI MALONE & EXTENDED JUST INTONATION</h2>
+
+            <p>Kali Malone (b. 1994) is an American composer and organist whose work with extended just intonation systems represents a significant development in contemporary microtonal composition. Based in Stockholm, Malone implements unique tuning systems in minimalist form for analog and digital synthesis, often combined with acoustic instrumentation.</p>
+
+            <p><strong>11-LIMIT JUST INTONATION:</strong></p>
+
+            <p>Malone's 2022 album <em><a href="https://idealrecordings.bandcamp.com/album/living-torch" target="_blank">Living Torch</a></em> was composed in <strong>11-odd limit just intonation</strong>, representing a more complex tuning system that involves intervals of around a quartertone, giving exotic sonorities such as neutral thirds and sevenths. The 33-minute piece, presented in two movements, features a complex electroacoustic ensemble including trombone, bass clarinet, boîte à bourdon, sine wave generators, and Éliane Radigue's ARP 2500 synthesizer. The trombone and bass clarinet were recorded in meticulous individual parts to match each computer-generated sound wave, demonstrating the precision required for extended just intonation performance.</p>
+
+            <p><strong>MODAL STRUCTURES IN EXTENDED LIMITS:</strong></p>
+
+            <p>Malone's approach to just intonation extends beyond Catherine Lamb's primarily 7-limit practice into 11- and 13-limit territories. These extended prime limits allow for:</p>
+
+            <ul>
+                <li><strong>Neutral intervals (11-limit)</strong>: Ratios like 11/9 (neutral third) and 11/6 (neutral seventh) that exist between major and minor intervals, creating ambiguous harmonic spaces characteristic of Malone's work.</li>
+                <li><strong>Undecimal harmonies</strong>: The 11/8 ratio (undecimal tritone) provides an alternative to the traditional 7/5 septimal tritone, offering even more refined microtonal distinctions.</li>
+                <li><strong>Modal frameworks</strong>: Unlike equal temperament's fixed modal structures, just intonation modes in different prime limits create unique interval sequences that cannot be transposed without changing their harmonic character.</li>
+            </ul>
+
+            <p><strong>ORGAN TUNING & COMPOSITIONAL PRACTICE:</strong></p>
+
+            <p>Malone became interested in just intonation through Ellen Arkbro and Marcus Pal when they were studying with <a href="https://en.wikipedia.org/wiki/La_Monte_Young" target="_blank">La Monte Young</a>. She apprenticed with organ tuner Jan Börjeson and began playing the organ through the practice of tuning it. This hands-on approach to temperament and intonation directly informs her compositional work, where isolating and intonating individual pitches allows for greater compositional freedom. Her 2019 album <em><a href="https://idealrecordings.bandcamp.com/album/the-sacrificial-code" target="_blank">The Sacrificial Code</a></em> features nearly two hours of pipe organ compositions exploring justly tuned harmony and canonic structures.</p>
+
+            <p><strong>CONNECTION TO CATHERINE LAMB:</strong></p>
+
+            <p>Both Lamb and Malone share an approach to just intonation that emphasizes the perception of combination tones, difference tones, and the acoustic phenomena that emerge from precise rational relationships. While Lamb often works within 7-limit systems exploring the harmonic seventh and septimal intervals, Malone extends this practice into 11-limit and beyond, investigating the neutral intervals and quartertone inflections that these higher prime limits afford. Together, their work represents a continuum of contemporary just intonation practice from septimal harmony through extended microtonal systems.</p>
+
             <div class="citation">
                 <strong>CITATIONS & REFERENCES:</strong><br><br>
 
@@ -499,7 +556,19 @@
 
                 <strong>[4]</strong> Lamb, Catherine. Program notes for "Prisma Interius VII" and other works. Available through Edition Wandelweiser and Another Timbre Records documentation.<br><br>
 
-                <strong>[5]</strong> Wannamaker, Robert. "The Spectral Music of Catherine Lamb and the Perception of Combination Tones." <em>Contemporary Music Review</em>, Vol. 37, No. 1-2, 2018, pp. 134-153. Academic analysis of her use of difference tones and rational intervals.
+                <strong>[5]</strong> Wannamaker, Robert. "The Spectral Music of Catherine Lamb and the Perception of Combination Tones." <em>Contemporary Music Review</em>, Vol. 37, No. 1-2, 2018, pp. 134-153. Academic analysis of her use of difference tones and rational intervals.<br><br>
+
+                <strong>[6]</strong> <a href="https://en.wikipedia.org/wiki/Kali_Malone" target="_blank">Kali Malone - Wikipedia</a>. Biographical information and overview of her work with just intonation and organ tuning.<br><br>
+
+                <strong>[7]</strong> <a href="https://www.tinymixtapes.com/features/kali-malone" target="_blank">Kali Malone Interview - Tiny Mix Tapes</a>. Discussion of her work with just intonation, apprenticeship with organ tuner Jan Börjeson, and studies with Ellen Arkbro and Marcus Pal.<br><br>
+
+                <strong>[8]</strong> <a href="https://idealrecordings.bandcamp.com/album/living-torch" target="_blank">Kali Malone - <em>Living Torch</em> (Ideal Recordings, 2022)</a>. Album composed in 11-odd limit just intonation, recorded at GRM studios in Paris 2020-2021.<br><br>
+
+                <strong>[9]</strong> <a href="https://idealrecordings.bandcamp.com/album/the-sacrificial-code" target="_blank">Kali Malone - <em>The Sacrificial Code</em> (Ideal Recordings, 2019)</a>. Nearly two hours of pipe organ compositions exploring justly tuned harmony and canonic structures.<br><br>
+
+                <strong>[10]</strong> <a href="https://en.wikipedia.org/wiki/Harry_Partch's_43-tone_scale" target="_blank">Harry Partch's 43-tone scale - Wikipedia</a>. Information on 11-limit just intonation systems and extended prime limits developed by Harry Partch.<br><br>
+
+                <strong>[11]</strong> <a href="https://en.wikipedia.org/wiki/Prime_limit" target="_blank">Limit (music) - Wikipedia</a>. Technical overview of prime limits in just intonation, including 5-, 7-, 11-, and 13-limit systems.
             </div>
         </div>
     </div>
@@ -665,10 +734,87 @@
                 '5/6': 'minor third (down)',
                 '8/9': 'major second (down)',
                 '9/10': 'major second (down)',
-                '15/16': 'minor second (down)'
+                '15/16': 'minor second (down)',
+                '7/4': 'harmonic seventh',
+                '8/7': 'septimal whole tone',
+                '7/6': 'septimal minor third',
+                '11/8': 'undecimal tritone',
+                '11/9': 'neutral third',
+                '11/6': 'neutral seventh',
+                '13/8': 'tridecimal sixth',
+                '13/12': 'tridecimal 2/3-tone'
             };
 
             return intervals[ratioString] || null;
+        }
+
+        // Define just intonation mode scales
+        function getModeRatios(mode) {
+            const modes = {
+                '5-limit-major': [
+                    { ratio: '1/1', name: 'root' },
+                    { ratio: '9/8', name: 'major second' },
+                    { ratio: '5/4', name: 'major third' },
+                    { ratio: '4/3', name: 'perfect fourth' },
+                    { ratio: '3/2', name: 'perfect fifth' },
+                    { ratio: '5/3', name: 'major sixth' },
+                    { ratio: '15/8', name: 'major seventh' },
+                    { ratio: '2/1', name: 'octave' }
+                ],
+                '5-limit-minor': [
+                    { ratio: '1/1', name: 'root' },
+                    { ratio: '9/8', name: 'major second' },
+                    { ratio: '6/5', name: 'minor third' },
+                    { ratio: '4/3', name: 'perfect fourth' },
+                    { ratio: '3/2', name: 'perfect fifth' },
+                    { ratio: '8/5', name: 'minor sixth' },
+                    { ratio: '9/5', name: 'minor seventh' },
+                    { ratio: '2/1', name: 'octave' }
+                ],
+                '7-limit-dorian': [
+                    { ratio: '1/1', name: 'root' },
+                    { ratio: '9/8', name: 'major second' },
+                    { ratio: '6/5', name: 'minor third' },
+                    { ratio: '4/3', name: 'perfect fourth' },
+                    { ratio: '3/2', name: 'perfect fifth' },
+                    { ratio: '8/5', name: 'minor sixth' },
+                    { ratio: '7/4', name: 'harmonic seventh' },
+                    { ratio: '2/1', name: 'octave' }
+                ],
+                '7-limit-lydian': [
+                    { ratio: '1/1', name: 'root' },
+                    { ratio: '9/8', name: 'major second' },
+                    { ratio: '5/4', name: 'major third' },
+                    { ratio: '7/5', name: 'septimal tritone' },
+                    { ratio: '3/2', name: 'perfect fifth' },
+                    { ratio: '5/3', name: 'major sixth' },
+                    { ratio: '7/4', name: 'harmonic seventh' },
+                    { ratio: '2/1', name: 'octave' }
+                ],
+                '11-limit-neutral': [
+                    { ratio: '1/1', name: 'root' },
+                    { ratio: '9/8', name: 'major second' },
+                    { ratio: '11/9', name: 'neutral third' },
+                    { ratio: '4/3', name: 'perfect fourth' },
+                    { ratio: '11/8', name: 'undecimal tritone' },
+                    { ratio: '3/2', name: 'perfect fifth' },
+                    { ratio: '11/6', name: 'neutral seventh' },
+                    { ratio: '2/1', name: 'octave' }
+                ],
+                '13-limit-extended': [
+                    { ratio: '1/1', name: 'root' },
+                    { ratio: '13/12', name: 'tridecimal 2/3-tone' },
+                    { ratio: '9/8', name: 'major second' },
+                    { ratio: '13/10', name: 'tridecimal minor third' },
+                    { ratio: '4/3', name: 'perfect fourth' },
+                    { ratio: '11/8', name: 'undecimal tritone' },
+                    { ratio: '3/2', name: 'perfect fifth' },
+                    { ratio: '13/8', name: 'tridecimal sixth' },
+                    { ratio: '7/4', name: 'harmonic seventh' },
+                    { ratio: '2/1', name: 'octave' }
+                ]
+            };
+            return modes[mode] || null;
         }
 
         async function playTone(frequency, button) {
@@ -782,75 +928,120 @@
         function generateTones() {
             const rootHz = currentAppliedRootHz;
             const ratio = parseRatio(currentAppliedRatio);
+            const selectedMode = document.getElementById('modeSelect').value;
 
             const toneGrid = document.getElementById('toneGrid');
             toneGrid.innerHTML = '';
 
-            // Generate combinations: m*A + n*B where A=rootHz, B=rootHz*ratio
-            const combinations = [
-                [1, 0], // 1*A
-                [0, 1], // 1*B
-                [2, 0], // 2*A
-                [1, 1], // 1*A + 1*B
-                [3, 0], // 3*A
-                [2, 1], // 2*A + 1*B
-                [0, 2], // 2*B
-                [1, 2], // 1*A + 2*B
-                [4, 0], // 4*A
-                [3, 1], // 3*A + 1*B
-                [2, 2], // 2*A + 2*B
-                [1, 3], // 1*A + 3*B
-                [0, 3], // 3*B
-                [5, 0], // 5*A
-                [4, 1], // 4*A + 1*B
-                [3, 2], // 3*A + 2*B
-                [2, 3], // 2*A + 3*B
-                [1, 4], // 1*A + 4*B
-            ];
+            // Check if mode-based generation is selected
+            const modeRatios = getModeRatios(selectedMode);
 
-            combinations.forEach(([m, n]) => {
-                const freq = m * rootHz + n * (rootHz * ratio);
+            if (modeRatios) {
+                // Generate tones based on the selected mode
+                modeRatios.forEach((interval) => {
+                    const ratioValue = parseRatio(interval.ratio);
+                    const freq = rootHz * ratioValue;
 
-                // Skip if frequency is out of audible range
-                if (freq < 20 || freq > 4000) return;
+                    // Skip if frequency is out of audible range
+                    if (freq < 20 || freq > 4000) return;
 
-                const button = document.createElement('button');
-                button.className = 'tone-button';
+                    const button = document.createElement('button');
+                    button.className = 'tone-button';
 
-                const freqDisplay = document.createElement('span');
-                freqDisplay.className = 'freq-display';
-                freqDisplay.textContent = freq.toFixed(2) + ' Hz';
+                    const freqDisplay = document.createElement('span');
+                    freqDisplay.className = 'freq-display';
+                    freqDisplay.textContent = freq.toFixed(2) + ' Hz';
 
-                // Calculate the ratio relative to root frequency
-                const relativeRatio = freq / rootHz;
-                const integerRatio = decimalToFraction(relativeRatio);
+                    const ratioDisplay = document.createElement('span');
+                    ratioDisplay.className = 'ratio-display';
+                    ratioDisplay.textContent = interval.ratio;
 
-                const ratioDisplay = document.createElement('span');
-                ratioDisplay.className = 'ratio-display';
-                ratioDisplay.textContent = `${integerRatio} (${m}*A + ${n}*B)`;
+                    button.appendChild(freqDisplay);
+                    button.appendChild(ratioDisplay);
 
-                button.appendChild(freqDisplay);
-                button.appendChild(ratioDisplay);
-
-                // Add interval name if it's a standard interval
-                const intervalName = getIntervalName(integerRatio);
-                if (intervalName) {
+                    // Add interval name
                     const intervalDisplay = document.createElement('span');
                     intervalDisplay.className = 'interval-name';
-                    intervalDisplay.textContent = intervalName;
+                    intervalDisplay.textContent = interval.name;
                     button.appendChild(intervalDisplay);
-                }
 
-                button.addEventListener('click', () => {
-                    if (activeOscillators.has(button)) {
-                        stopTone(button);
-                    } else {
-                        playTone(freq, button);
-                    }
+                    button.addEventListener('click', () => {
+                        if (activeOscillators.has(button)) {
+                            stopTone(button);
+                        } else {
+                            playTone(freq, button);
+                        }
+                    });
+
+                    toneGrid.appendChild(button);
                 });
+            } else {
+                // Free exploration mode: Generate combinations m*A + n*B where A=rootHz, B=rootHz*ratio
+                const combinations = [
+                    [1, 0], // 1*A
+                    [0, 1], // 1*B
+                    [2, 0], // 2*A
+                    [1, 1], // 1*A + 1*B
+                    [3, 0], // 3*A
+                    [2, 1], // 2*A + 1*B
+                    [0, 2], // 2*B
+                    [1, 2], // 1*A + 2*B
+                    [4, 0], // 4*A
+                    [3, 1], // 3*A + 1*B
+                    [2, 2], // 2*A + 2*B
+                    [1, 3], // 1*A + 3*B
+                    [0, 3], // 3*B
+                    [5, 0], // 5*A
+                    [4, 1], // 4*A + 1*B
+                    [3, 2], // 3*A + 2*B
+                    [2, 3], // 2*A + 3*B
+                    [1, 4], // 1*A + 4*B
+                ];
 
-                toneGrid.appendChild(button);
-            });
+                combinations.forEach(([m, n]) => {
+                    const freq = m * rootHz + n * (rootHz * ratio);
+
+                    // Skip if frequency is out of audible range
+                    if (freq < 20 || freq > 4000) return;
+
+                    const button = document.createElement('button');
+                    button.className = 'tone-button';
+
+                    const freqDisplay = document.createElement('span');
+                    freqDisplay.className = 'freq-display';
+                    freqDisplay.textContent = freq.toFixed(2) + ' Hz';
+
+                    // Calculate the ratio relative to root frequency
+                    const relativeRatio = freq / rootHz;
+                    const integerRatio = decimalToFraction(relativeRatio);
+
+                    const ratioDisplay = document.createElement('span');
+                    ratioDisplay.className = 'ratio-display';
+                    ratioDisplay.textContent = `${integerRatio} (${m}*A + ${n}*B)`;
+
+                    button.appendChild(freqDisplay);
+                    button.appendChild(ratioDisplay);
+
+                    // Add interval name if it's a standard interval
+                    const intervalName = getIntervalName(integerRatio);
+                    if (intervalName) {
+                        const intervalDisplay = document.createElement('span');
+                        intervalDisplay.className = 'interval-name';
+                        intervalDisplay.textContent = intervalName;
+                        button.appendChild(intervalDisplay);
+                    }
+
+                    button.addEventListener('click', () => {
+                        if (activeOscillators.has(button)) {
+                            stopTone(button);
+                        } else {
+                            playTone(freq, button);
+                        }
+                    });
+
+                    toneGrid.appendChild(button);
+                });
+            }
         }
 
         // Initialize audio button handler
@@ -903,6 +1094,11 @@
         document.getElementById('fadeTime').addEventListener('input', (e) => {
             fadeTimeMs = parseInt(e.target.value);
             document.getElementById('currentFadeTime').textContent = fadeTimeMs;
+        });
+
+        // Mode select event listener
+        document.getElementById('modeSelect').addEventListener('change', (e) => {
+            generateTones();
         });
 
         // Stop all tones when page is hidden
