@@ -1207,16 +1207,6 @@
                 unlockAudio();
             }
         }, { once: true });
-
-        // Stop all tones when page is hidden
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                activeOscillators.forEach((nodes, element) => {
-                    stopTone(element);
-                });
-                stopAudioFile();
-            }
-        });
     </script>
 </body>
 </html>

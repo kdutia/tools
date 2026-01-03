@@ -1421,15 +1421,6 @@
             generateTones();
         });
 
-        // Stop all tones when page is hidden
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                activeOscillators.forEach((nodes, button) => {
-                    stopTone(button);
-                });
-            }
-        });
-
         // Also try to unlock audio on any user interaction (belt and suspenders approach)
         document.addEventListener('touchstart', function tryUnlock() {
             if (!audioInitialized) {
