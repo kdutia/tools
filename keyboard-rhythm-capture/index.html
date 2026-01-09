@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyboard Rhythm Capture</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-record {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-record:hover:not(:disabled) {
+            background: #c0392b;
+        }
+
+        .btn-record.recording {
+            background: #27ae60;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(39, 174, 96, 0); }
+        }
+
+        .btn-export {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-export:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .btn-clear {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-clear:hover:not(:disabled) {
+            background: #7f8c8d;
+        }
+
+        .status {
+            text-align: center;
+            padding: 20px;
+            background: #16213e;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .status-text {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .status-text.recording {
+            color: #27ae60;
+        }
+
+        .timer {
+            font-size: 48px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            color: #00d4ff;
+        }
+
+        .key-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .key-indicator {
+            text-align: center;
+        }
+
+        .key-box {
+            width: 120px;
+            height: 80px;
+            border: 3px solid #444;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.05s;
+            margin-bottom: 8px;
+        }
+
+        .key-box.active {
+            background: #00d4ff;
+            border-color: #00d4ff;
+            color: #1a1a2e;
+            font-weight: bold;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+
+        .key-box.space.active {
+            background: #e74c3c;
+            border-color: #e74c3c;
+            box-shadow: 0 0 30px rgba(231, 76, 60, 0.5);
+        }
+
+        .key-label {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .event-count {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .timeline-container {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .timeline-title {
+            font-size: 16px;
+            color: #00d4ff;
+        }
+
+        .timeline {
+            height: 120px;
+            background: #0f0f23;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timeline-track {
+            height: 50px;
+            position: relative;
+            border-bottom: 1px solid #333;
+        }
+
+        .timeline-track:last-child {
+            border-bottom: none;
+        }
+
+        .timeline-track-label {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #666;
+            z-index: 1;
+        }
+
+        .event-bar {
+            position: absolute;
+            height: 30px;
+            top: 10px;
+            border-radius: 4px;
+            min-width: 4px;
+        }
+
+        .event-bar.other {
+            background: linear-gradient(90deg, #00d4ff, #0099cc);
+        }
+
+        .event-bar.space {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+        }
+
+        .settings {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .settings-title {
+            font-size: 16px;
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .setting-row label {
+            min-width: 120px;
+            color: #888;
+        }
+
+        .setting-row input, .setting-row select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #0f0f23;
+            color: #eee;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .instructions {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .instructions h3 {
+            color: #00d4ff;
+            margin-top: 0;
+        }
+
+        .instructions ul {
+            color: #aaa;
+            line-height: 1.8;
+        }
+
+        .instructions code {
+            background: #0f0f23;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #00d4ff;
+        }
+
+        .export-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Keyboard Rhythm Capture</h1>
+        <p class="subtitle">Capture your keyboard rhythms and export to MIDI for music production</p>
+
+        <div class="controls">
+            <button id="recordBtn" class="btn-record">Start Recording</button>
+            <button id="clearBtn" class="btn-clear" disabled>Clear</button>
+        </div>
+
+        <div class="status">
+            <div id="statusText" class="status-text">Click "Start Recording" and type to capture rhythms</div>
+            <div id="timer" class="timer">00:00.000</div>
+        </div>
+
+        <div class="key-indicators">
+            <div class="key-indicator">
+                <div id="otherKeyBox" class="key-box">Any Key</div>
+                <div class="key-label">Other Keys</div>
+                <div id="otherCount" class="event-count">0 events</div>
+            </div>
+            <div class="key-indicator">
+                <div id="spaceKeyBox" class="key-box space">Space</div>
+                <div class="key-label">Space Key</div>
+                <div id="spaceCount" class="event-count">0 events</div>
+            </div>
+        </div>
+
+        <div class="timeline-container">
+            <div class="timeline-header">
+                <span class="timeline-title">Timeline (last 10 seconds)</span>
+            </div>
+            <div class="timeline">
+                <div class="timeline-track" id="otherTrack">
+                    <span class="timeline-track-label">Other</span>
+                </div>
+                <div class="timeline-track" id="spaceTrack">
+                    <span class="timeline-track-label">Space</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div id="totalEvents" class="stat-value">0</div>
+                <div class="stat-label">Total Events</div>
+            </div>
+            <div class="stat-card">
+                <div id="duration" class="stat-value">0.0s</div>
+                <div class="stat-label">Duration</div>
+            </div>
+            <div class="stat-card">
+                <div id="avgBpm" class="stat-value">--</div>
+                <div class="stat-label">Est. BPM</div>
+            </div>
+            <div class="stat-card">
+                <div id="resolution" class="stat-value">~0.1ms</div>
+                <div class="stat-label">Timing Resolution</div>
+            </div>
+        </div>
+
+        <div class="settings">
+            <div class="settings-title">Export Settings</div>
+            <div class="setting-row">
+                <label>MIDI Tempo (BPM):</label>
+                <input type="number" id="tempoInput" value="120" min="20" max="300">
+            </div>
+            <div class="setting-row">
+                <label>Other Keys Note:</label>
+                <select id="otherNoteSelect">
+                    <option value="36">C1 (Kick)</option>
+                    <option value="38" selected>D1 (Snare)</option>
+                    <option value="42">F#1 (Hi-Hat Closed)</option>
+                    <option value="60">C3 (Middle C)</option>
+                    <option value="64">E3</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label>Space Key Note:</label>
+                <select id="spaceNoteSelect">
+                    <option value="36" selected>C1 (Kick)</option>
+                    <option value="38">D1 (Snare)</option>
+                    <option value="42">F#1 (Hi-Hat Closed)</option>
+                    <option value="60">C3 (Middle C)</option>
+                    <option value="64">E3</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label>Velocity:</label>
+                <input type="number" id="velocityInput" value="100" min="1" max="127">
+            </div>
+        </div>
+
+        <div class="controls export-options">
+            <button id="exportMidiBtn" class="btn-export" disabled>Export MIDI</button>
+            <button id="exportJsonBtn" class="btn-export" disabled>Export JSON</button>
+            <button id="exportCsvBtn" class="btn-export" disabled>Export CSV</button>
+        </div>
+
+        <div class="instructions">
+            <h3>How to Use</h3>
+            <ul>
+                <li><strong>Start Recording:</strong> Click the button or press <code>Enter</code> to begin capturing</li>
+                <li><strong>Type rhythms:</strong> Press any keys to record. Space is tracked separately from all other keys</li>
+                <li><strong>Stop Recording:</strong> Click the button again or press <code>Escape</code></li>
+                <li><strong>Export:</strong> Choose MIDI for DAWs, JSON for detailed data, or CSV for spreadsheets</li>
+                <li><strong>MIDI Notes:</strong> Customize which notes each key type triggers in your DAW</li>
+            </ul>
+            <h3>Tips for Music Production</h3>
+            <ul>
+                <li>Use <strong>Space</strong> for kick drum or bass rhythm</li>
+                <li>Use <strong>other keys</strong> for hi-hats, snares, or melodic notes</li>
+                <li>The timing resolution is ~0.1ms, capturing subtle groove variations</li>
+                <li>Import the MIDI into your DAW and quantize if needed, or keep the human feel</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let isRecording = false;
+        let startTime = null;
+        let events = [];
+        let activeKeys = new Set();
+        let timerInterval = null;
+
+        // DOM elements
+        const recordBtn = document.getElementById('recordBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusText = document.getElementById('statusText');
+        const timer = document.getElementById('timer');
+        const otherKeyBox = document.getElementById('otherKeyBox');
+        const spaceKeyBox = document.getElementById('spaceKeyBox');
+        const otherCount = document.getElementById('otherCount');
+        const spaceCount = document.getElementById('spaceCount');
+        const otherTrack = document.getElementById('otherTrack');
+        const spaceTrack = document.getElementById('spaceTrack');
+        const totalEvents = document.getElementById('totalEvents');
+        const durationStat = document.getElementById('duration');
+        const avgBpm = document.getElementById('avgBpm');
+        const exportMidiBtn = document.getElementById('exportMidiBtn');
+        const exportJsonBtn = document.getElementById('exportJsonBtn');
+        const exportCsvBtn = document.getElementById('exportCsvBtn');
+
+        // Format time as MM:SS.mmm
+        function formatTime(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            const millis = Math.floor(ms % 1000);
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
+        }
+
+        // Start recording
+        function startRecording() {
+            isRecording = true;
+            startTime = performance.now();
+            events = [];
+            activeKeys.clear();
+
+            recordBtn.textContent = 'Stop Recording';
+            recordBtn.classList.add('recording');
+            statusText.textContent = 'Recording... Type to capture rhythms';
+            statusText.classList.add('recording');
+            clearBtn.disabled = true;
+            exportMidiBtn.disabled = true;
+            exportJsonBtn.disabled = true;
+            exportCsvBtn.disabled = true;
+
+            // Clear timeline
+            clearTimeline();
+
+            // Start timer
+            timerInterval = setInterval(updateTimer, 10);
+        }
+
+        // Stop recording
+        function stopRecording() {
+            isRecording = false;
+
+            // Handle any keys still held down
+            const endTime = performance.now() - startTime;
+            activeKeys.forEach(keyType => {
+                events.push({
+                    type: 'keyup',
+                    keyType: keyType,
+                    time: endTime
+                });
+            });
+            activeKeys.clear();
+
+            recordBtn.textContent = 'Start Recording';
+            recordBtn.classList.remove('recording');
+            statusText.textContent = `Recording complete - ${events.length} events captured`;
+            statusText.classList.remove('recording');
+            clearBtn.disabled = events.length === 0;
+            exportMidiBtn.disabled = events.length === 0;
+            exportJsonBtn.disabled = events.length === 0;
+            exportCsvBtn.disabled = events.length === 0;
+
+            // Stop timer
+            clearInterval(timerInterval);
+
+            // Update stats
+            updateStats();
+
+            // Reset key indicators
+            otherKeyBox.classList.remove('active');
+            spaceKeyBox.classList.remove('active');
+        }
+
+        // Update timer display
+        function updateTimer() {
+            if (startTime !== null) {
+                const elapsed = performance.now() - startTime;
+                timer.textContent = formatTime(elapsed);
+            }
+        }
+
+        // Clear timeline visualization
+        function clearTimeline() {
+            const otherBars = otherTrack.querySelectorAll('.event-bar');
+            const spaceBars = spaceTrack.querySelectorAll('.event-bar');
+            otherBars.forEach(bar => bar.remove());
+            spaceBars.forEach(bar => bar.remove());
+        }
+
+        // Update timeline visualization
+        function updateTimeline() {
+            clearTimeline();
+
+            if (events.length === 0) return;
+
+            const currentTime = isRecording ? (performance.now() - startTime) :
+                events.length > 0 ? Math.max(...events.map(e => e.time)) : 0;
+
+            // Show last 10 seconds
+            const windowSize = 10000;
+            const windowStart = Math.max(0, currentTime - windowSize);
+
+            // Build note events (pair keydown with keyup)
+            const notes = [];
+            const pendingDown = { space: null, other: null };
+
+            events.forEach(event => {
+                if (event.type === 'keydown') {
+                    pendingDown[event.keyType] = event.time;
+                } else if (event.type === 'keyup' && pendingDown[event.keyType] !== null) {
+                    notes.push({
+                        keyType: event.keyType,
+                        start: pendingDown[event.keyType],
+                        end: event.time
+                    });
+                    pendingDown[event.keyType] = null;
+                }
+            });
+
+            // Add currently held notes
+            if (pendingDown.space !== null) {
+                notes.push({ keyType: 'space', start: pendingDown.space, end: currentTime });
+            }
+            if (pendingDown.other !== null) {
+                notes.push({ keyType: 'other', start: pendingDown.other, end: currentTime });
+            }
+
+            // Render notes in window
+            notes.forEach(note => {
+                if (note.end < windowStart || note.start > currentTime) return;
+
+                const track = note.keyType === 'space' ? spaceTrack : otherTrack;
+                const bar = document.createElement('div');
+                bar.className = `event-bar ${note.keyType}`;
+
+                const startPct = Math.max(0, (note.start - windowStart) / windowSize) * 100;
+                const endPct = Math.min(100, (note.end - windowStart) / windowSize * 100);
+                const widthPct = endPct - startPct;
+
+                bar.style.left = `${startPct}%`;
+                bar.style.width = `${Math.max(0.5, widthPct)}%`;
+
+                track.appendChild(bar);
+            });
+        }
+
+        // Update statistics
+        function updateStats() {
+            const keydownEvents = events.filter(e => e.type === 'keydown');
+            const spaceEvents = keydownEvents.filter(e => e.keyType === 'space');
+            const otherEvents = keydownEvents.filter(e => e.keyType === 'other');
+
+            totalEvents.textContent = keydownEvents.length;
+            otherCount.textContent = `${otherEvents.length} events`;
+            spaceCount.textContent = `${spaceEvents.length} events`;
+
+            if (events.length > 0) {
+                const duration = Math.max(...events.map(e => e.time)) / 1000;
+                durationStat.textContent = `${duration.toFixed(1)}s`;
+
+                // Estimate BPM from average time between keydown events
+                if (keydownEvents.length >= 2) {
+                    const intervals = [];
+                    for (let i = 1; i < keydownEvents.length; i++) {
+                        intervals.push(keydownEvents[i].time - keydownEvents[i-1].time);
+                    }
+                    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                    const bpm = Math.round(60000 / avgInterval);
+                    avgBpm.textContent = bpm > 20 && bpm < 300 ? bpm : '--';
+                }
+            }
+        }
+
+        // Handle keydown
+        function handleKeyDown(e) {
+            // Allow Escape to stop recording
+            if (e.key === 'Escape' && isRecording) {
+                stopRecording();
+                return;
+            }
+
+            // Allow Enter to toggle recording when not in input
+            if (e.key === 'Enter' && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                if (isRecording) {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+                return;
+            }
+
+            if (!isRecording) return;
+            if (e.target.tagName === 'INPUT') return;
+
+            e.preventDefault();
+
+            const keyType = e.code === 'Space' ? 'space' : 'other';
+
+            // Ignore key repeat
+            if (activeKeys.has(keyType)) return;
+
+            activeKeys.add(keyType);
+
+            const time = performance.now() - startTime;
+            events.push({
+                type: 'keydown',
+                keyType: keyType,
+                time: time,
+                key: e.key,
+                code: e.code
+            });
+
+            // Visual feedback
+            if (keyType === 'space') {
+                spaceKeyBox.classList.add('active');
+            } else {
+                otherKeyBox.classList.add('active');
+            }
+
+            updateStats();
+            updateTimeline();
+        }
+
+        // Handle keyup
+        function handleKeyUp(e) {
+            if (!isRecording) return;
+            if (e.target.tagName === 'INPUT') return;
+
+            const keyType = e.code === 'Space' ? 'space' : 'other';
+
+            if (!activeKeys.has(keyType)) return;
+
+            activeKeys.delete(keyType);
+
+            const time = performance.now() - startTime;
+            events.push({
+                type: 'keyup',
+                keyType: keyType,
+                time: time,
+                key: e.key,
+                code: e.code
+            });
+
+            // Visual feedback
+            if (keyType === 'space') {
+                spaceKeyBox.classList.remove('active');
+            } else {
+                otherKeyBox.classList.remove('active');
+            }
+
+            updateTimeline();
+        }
+
+        // MIDI file generation
+        function generateMidi() {
+            const tempo = parseInt(document.getElementById('tempoInput').value) || 120;
+            const otherNote = parseInt(document.getElementById('otherNoteSelect').value);
+            const spaceNote = parseInt(document.getElementById('spaceNoteSelect').value);
+            const velocity = parseInt(document.getElementById('velocityInput').value) || 100;
+
+            // MIDI constants
+            const TICKS_PER_BEAT = 480;
+            const MS_PER_BEAT = 60000 / tempo;
+
+            // Convert time in ms to MIDI ticks
+            function msToTicks(ms) {
+                return Math.round((ms / MS_PER_BEAT) * TICKS_PER_BEAT);
+            }
+
+            // Variable-length quantity encoding
+            function encodeVLQ(value) {
+                const bytes = [];
+                bytes.push(value & 0x7F);
+                value >>= 7;
+                while (value > 0) {
+                    bytes.push((value & 0x7F) | 0x80);
+                    value >>= 7;
+                }
+                return bytes.reverse();
+            }
+
+            // Build note events from raw events
+            const notes = [];
+            const pendingDown = { space: null, other: null };
+
+            events.forEach(event => {
+                if (event.type === 'keydown') {
+                    pendingDown[event.keyType] = event.time;
+                } else if (event.type === 'keyup' && pendingDown[event.keyType] !== null) {
+                    notes.push({
+                        keyType: event.keyType,
+                        start: pendingDown[event.keyType],
+                        end: event.time,
+                        note: event.keyType === 'space' ? spaceNote : otherNote
+                    });
+                    pendingDown[event.keyType] = null;
+                }
+            });
+
+            // Sort by start time
+            notes.sort((a, b) => a.start - b.start);
+
+            // Build MIDI track data
+            function buildTrack(trackNotes, trackName) {
+                const trackData = [];
+
+                // Track name meta event
+                const nameBytes = new TextEncoder().encode(trackName);
+                trackData.push(0x00); // Delta time
+                trackData.push(0xFF, 0x03, nameBytes.length);
+                trackData.push(...nameBytes);
+
+                // Build all MIDI events sorted by time
+                const midiEvents = [];
+                trackNotes.forEach(note => {
+                    midiEvents.push({
+                        time: msToTicks(note.start),
+                        type: 'on',
+                        note: note.note
+                    });
+                    midiEvents.push({
+                        time: msToTicks(note.end),
+                        type: 'off',
+                        note: note.note
+                    });
+                });
+
+                // Sort by time
+                midiEvents.sort((a, b) => a.time - b.time);
+
+                // Convert to delta times and add to track
+                let lastTime = 0;
+                midiEvents.forEach(event => {
+                    const delta = event.time - lastTime;
+                    trackData.push(...encodeVLQ(delta));
+
+                    if (event.type === 'on') {
+                        trackData.push(0x90, event.note, velocity); // Note on, channel 0
+                    } else {
+                        trackData.push(0x80, event.note, 0); // Note off, channel 0
+                    }
+
+                    lastTime = event.time;
+                });
+
+                // End of track
+                trackData.push(0x00, 0xFF, 0x2F, 0x00);
+
+                return trackData;
+            }
+
+            // Build tempo track
+            function buildTempoTrack() {
+                const trackData = [];
+
+                // Track name
+                const name = new TextEncoder().encode('Tempo');
+                trackData.push(0x00, 0xFF, 0x03, name.length, ...name);
+
+                // Tempo meta event
+                const microsecondsPerBeat = Math.round(60000000 / tempo);
+                trackData.push(0x00, 0xFF, 0x51, 0x03);
+                trackData.push((microsecondsPerBeat >> 16) & 0xFF);
+                trackData.push((microsecondsPerBeat >> 8) & 0xFF);
+                trackData.push(microsecondsPerBeat & 0xFF);
+
+                // Time signature (4/4)
+                trackData.push(0x00, 0xFF, 0x58, 0x04, 0x04, 0x02, 0x18, 0x08);
+
+                // End of track
+                trackData.push(0x00, 0xFF, 0x2F, 0x00);
+
+                return trackData;
+            }
+
+            // Split notes by type
+            const otherNotes = notes.filter(n => n.keyType === 'other');
+            const spaceNotes = notes.filter(n => n.keyType === 'space');
+
+            // Build tracks
+            const tempoTrack = buildTempoTrack();
+            const otherTrackData = buildTrack(otherNotes, 'Other Keys');
+            const spaceTrackData = buildTrack(spaceNotes, 'Space Key');
+
+            // Build complete MIDI file
+            const tracks = [tempoTrack, otherTrackData, spaceTrackData];
+
+            // Header chunk
+            const header = [
+                0x4D, 0x54, 0x68, 0x64, // MThd
+                0x00, 0x00, 0x00, 0x06, // Header length (6)
+                0x00, 0x01, // Format 1
+                0x00, tracks.length, // Number of tracks
+                (TICKS_PER_BEAT >> 8) & 0xFF, TICKS_PER_BEAT & 0xFF // Ticks per beat
+            ];
+
+            // Track chunks
+            const trackChunks = [];
+            tracks.forEach(trackData => {
+                trackChunks.push(
+                    0x4D, 0x54, 0x72, 0x6B, // MTrk
+                    (trackData.length >> 24) & 0xFF,
+                    (trackData.length >> 16) & 0xFF,
+                    (trackData.length >> 8) & 0xFF,
+                    trackData.length & 0xFF,
+                    ...trackData
+                );
+            });
+
+            return new Uint8Array([...header, ...trackChunks]);
+        }
+
+        // Export MIDI
+        function exportMidi() {
+            const midiData = generateMidi();
+            const blob = new Blob([midiData], { type: 'audio/midi' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `keyboard-rhythm-${Date.now()}.mid`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Export JSON
+        function exportJson() {
+            const data = {
+                recordedAt: new Date().toISOString(),
+                settings: {
+                    tempo: parseInt(document.getElementById('tempoInput').value),
+                    otherNote: parseInt(document.getElementById('otherNoteSelect').value),
+                    spaceNote: parseInt(document.getElementById('spaceNoteSelect').value),
+                    velocity: parseInt(document.getElementById('velocityInput').value)
+                },
+                events: events.map(e => ({
+                    type: e.type,
+                    keyType: e.keyType,
+                    timeMs: e.time,
+                    key: e.key,
+                    code: e.code
+                }))
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `keyboard-rhythm-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Export CSV
+        function exportCsv() {
+            const rows = ['type,keyType,timeMs,key,code'];
+            events.forEach(e => {
+                rows.push(`${e.type},${e.keyType},${e.time.toFixed(3)},${e.key || ''},${e.code || ''}`);
+            });
+
+            const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `keyboard-rhythm-${Date.now()}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Clear all data
+        function clearData() {
+            events = [];
+            activeKeys.clear();
+            startTime = null;
+            timer.textContent = '00:00.000';
+            statusText.textContent = 'Click "Start Recording" and type to capture rhythms';
+            totalEvents.textContent = '0';
+            durationStat.textContent = '0.0s';
+            avgBpm.textContent = '--';
+            otherCount.textContent = '0 events';
+            spaceCount.textContent = '0 events';
+            clearTimeline();
+            clearBtn.disabled = true;
+            exportMidiBtn.disabled = true;
+            exportJsonBtn.disabled = true;
+            exportCsvBtn.disabled = true;
+        }
+
+        // Event listeners
+        recordBtn.addEventListener('click', () => {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+
+        clearBtn.addEventListener('click', clearData);
+        exportMidiBtn.addEventListener('click', exportMidi);
+        exportJsonBtn.addEventListener('click', exportJson);
+        exportCsvBtn.addEventListener('click', exportCsv);
+
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+
+        // Prevent spacebar from scrolling
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && isRecording && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+            }
+        });
+
+        // Update timeline periodically during recording
+        setInterval(() => {
+            if (isRecording) {
+                updateTimeline();
+            }
+        }, 50);
+    </script>
+</body>
+</html>
