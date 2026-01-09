@@ -1304,6 +1304,7 @@
 
             if (modeRatios) {
                 // Generate tones based on the selected mode
+                let buttonIndex = 0; // Track actual DOM button index (separate from forEach index)
                 modeRatios.forEach((interval, index) => {
                     const ratioValue = parseRatio(interval.ratio);
                     const freq = rootHz * ratioValue;
@@ -1347,7 +1348,7 @@
                     const panControl = document.createElement('div');
                     panControl.className = 'pitch-control';
                     const panLabel = document.createElement('label');
-                    panLabel.innerHTML = `PAN <span class="value-inline" id="pan-value-mode-${index}">(C)</span>`;
+                    panLabel.innerHTML = `PAN <span class="value-inline" id="pan-value-mode-${buttonIndex}">(C)</span>`;
                     const panInput = document.createElement('input');
                     panInput.type = 'range';
                     panInput.min = '-1';
@@ -1357,7 +1358,7 @@
                     panInput.addEventListener('input', (e) => {
                         const panValue = parseFloat(e.target.value);
                         pitchSettings.get(freq).pan = panValue;
-                        const panValueSpan = document.getElementById(`pan-value-mode-${index}`);
+                        const panValueSpan = document.getElementById(`pan-value-mode-${buttonIndex}`);
                         if (panValue < -0.05) {
                             panValueSpan.textContent = `(L${Math.abs(panValue).toFixed(2)})`;
                         } else if (panValue > 0.05) {
@@ -1381,7 +1382,7 @@
                     const ampControl = document.createElement('div');
                     ampControl.className = 'pitch-control';
                     const ampLabel = document.createElement('label');
-                    ampLabel.innerHTML = `AMPLITUDE <span class="value-inline" id="amp-value-mode-${index}">1.00</span>`;
+                    ampLabel.innerHTML = `AMPLITUDE <span class="value-inline" id="amp-value-mode-${buttonIndex}">1.00</span>`;
                     const ampInput = document.createElement('input');
                     ampInput.type = 'range';
                     ampInput.min = '0';
@@ -1391,7 +1392,7 @@
                     ampInput.addEventListener('input', (e) => {
                         const ampValue = parseFloat(e.target.value);
                         pitchSettings.get(freq).amplitude = ampValue;
-                        document.getElementById(`amp-value-mode-${index}`).textContent = ampValue.toFixed(2);
+                        document.getElementById(`amp-value-mode-${buttonIndex}`).textContent = ampValue.toFixed(2);
                         // Update if currently playing
                         if (activeOscillators.has(button)) {
                             const nodes = activeOscillators.get(button);
@@ -1421,6 +1422,7 @@
                     });
 
                     toneGrid.appendChild(button);
+                    buttonIndex++; // Increment after adding button to DOM
                 });
             } else {
                 // Free exploration mode: Generate combinations m*A + n*B where A=rootHz, B=rootHz*ratio
@@ -1445,6 +1447,7 @@
                     [1, 4], // 1*A + 4*B
                 ];
 
+                let buttonIndex = 0; // Track actual DOM button index (separate from forEach index)
                 combinations.forEach(([m, n], index) => {
                     const freq = m * rootHz + n * (rootHz * ratio);
 
@@ -1494,7 +1497,7 @@
                     const panControl = document.createElement('div');
                     panControl.className = 'pitch-control';
                     const panLabel = document.createElement('label');
-                    panLabel.innerHTML = `PAN <span class="value-inline" id="pan-value-free-${index}">(C)</span>`;
+                    panLabel.innerHTML = `PAN <span class="value-inline" id="pan-value-free-${buttonIndex}">(C)</span>`;
                     const panInput = document.createElement('input');
                     panInput.type = 'range';
                     panInput.min = '-1';
@@ -1504,7 +1507,7 @@
                     panInput.addEventListener('input', (e) => {
                         const panValue = parseFloat(e.target.value);
                         pitchSettings.get(freq).pan = panValue;
-                        const panValueSpan = document.getElementById(`pan-value-free-${index}`);
+                        const panValueSpan = document.getElementById(`pan-value-free-${buttonIndex}`);
                         if (panValue < -0.05) {
                             panValueSpan.textContent = `(L${Math.abs(panValue).toFixed(2)})`;
                         } else if (panValue > 0.05) {
@@ -1528,7 +1531,7 @@
                     const ampControl = document.createElement('div');
                     ampControl.className = 'pitch-control';
                     const ampLabel = document.createElement('label');
-                    ampLabel.innerHTML = `AMPLITUDE <span class="value-inline" id="amp-value-free-${index}">1.00</span>`;
+                    ampLabel.innerHTML = `AMPLITUDE <span class="value-inline" id="amp-value-free-${buttonIndex}">1.00</span>`;
                     const ampInput = document.createElement('input');
                     ampInput.type = 'range';
                     ampInput.min = '0';
@@ -1538,7 +1541,7 @@
                     ampInput.addEventListener('input', (e) => {
                         const ampValue = parseFloat(e.target.value);
                         pitchSettings.get(freq).amplitude = ampValue;
-                        document.getElementById(`amp-value-free-${index}`).textContent = ampValue.toFixed(2);
+                        document.getElementById(`amp-value-free-${buttonIndex}`).textContent = ampValue.toFixed(2);
                         // Update if currently playing
                         if (activeOscillators.has(button)) {
                             const nodes = activeOscillators.get(button);
@@ -1568,6 +1571,7 @@
                     });
 
                     toneGrid.appendChild(button);
+                    buttonIndex++; // Increment after adding button to DOM
                 });
             }
         }
