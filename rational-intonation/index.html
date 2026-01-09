@@ -1840,9 +1840,11 @@
         // Map fader CC values to intonation explorer controls
         function handleFaderCC(ccNumber, ccValue) {
             const normalizedValue = ccValue / 127; // 0.0 to 1.0
+            console.log(`handleFaderCC: CC${ccNumber} = ${ccValue} (normalized: ${normalizedValue.toFixed(3)})`);
 
             switch (ccNumber) {
                 case 0: // Fader 1: Master Amplitude
+                    console.log('→ Setting master amplitude');
                     setMasterAmplitude(normalizedValue);
                     break;
 
@@ -1856,6 +1858,7 @@
                 case 8: // Fader 9: Pitch 8 Amplitude
                 case 9: // Fader 10: Pitch 9 Amplitude
                 case 10: // Fader 11: Pitch 10 Amplitude
+                    console.log(`→ Setting pitch ${ccNumber} amplitude (pitchIndex: ${ccNumber - 1})`);
                     setPitchAmplitude(ccNumber - 1, normalizedValue);
                     break;
 
@@ -1906,40 +1909,74 @@
 
         // Set individual pitch amplitude from MIDI
         function setPitchAmplitude(pitchIndex, value) {
+            console.log(`setPitchAmplitude called: pitchIndex=${pitchIndex}, value=${value.toFixed(3)}`);
+
             // Get the tone buttons in order
             const toneButtons = document.querySelectorAll('.tone-button');
-            if (pitchIndex >= toneButtons.length) return;
+            console.log(`  Found ${toneButtons.length} tone buttons`);
+
+            if (pitchIndex >= toneButtons.length) {
+                console.log(`  ✗ pitchIndex ${pitchIndex} >= ${toneButtons.length} tone buttons - aborting`);
+                return;
+            }
 
             const button = toneButtons[pitchIndex];
-            const freqText = button.querySelector('.freq-display').textContent;
+            console.log(`  Button at index ${pitchIndex}:`, button);
+
+            const freqDisplay = button.querySelector('.freq-display');
+            if (!freqDisplay) {
+                console.log(`  ✗ No .freq-display element found in button`);
+                return;
+            }
+
+            const freqText = freqDisplay.textContent;
             const frequency = parseFloat(freqText);
+            console.log(`  Frequency: ${frequency} Hz`);
 
             // Update pitch settings
             if (!pitchSettings.has(frequency)) {
                 pitchSettings.set(frequency, { pan: 0, amplitude: 1.0 });
+                console.log(`  Created new pitchSettings entry for ${frequency} Hz`);
             }
             pitchSettings.get(frequency).amplitude = value;
+            console.log(`  Updated pitchSettings[${frequency}].amplitude = ${value.toFixed(3)}`);
 
             // Update the slider in the UI
             const selectedMode = document.getElementById('modeSelect').value;
             const modeRatios = getModeRatios(selectedMode);
             const idPrefix = modeRatios ? 'mode' : 'free';
+            console.log(`  Mode: ${selectedMode}, idPrefix: ${idPrefix}`);
+
             const ampSlider = button.querySelector('input[type="range"]:last-of-type');
             const ampValueSpan = document.getElementById(`amp-value-${idPrefix}-${pitchIndex}`);
 
+            console.log(`  ampSlider found:`, ampSlider !== null);
+            console.log(`  ampValueSpan (amp-value-${idPrefix}-${pitchIndex}) found:`, ampValueSpan !== null);
+
             if (ampSlider) {
                 ampSlider.value = value;
+                console.log(`  ✓ Updated slider value to ${value}`);
+            } else {
+                console.log(`  ✗ No amplitude slider found in button`);
             }
+
             if (ampValueSpan) {
                 ampValueSpan.textContent = value.toFixed(2);
+                console.log(`  ✓ Updated value display to ${value.toFixed(2)}`);
+            } else {
+                console.log(`  ✗ No value span found with id amp-value-${idPrefix}-${pitchIndex}`);
             }
 
             // Update if currently playing
-            if (activeOscillators.has(button)) {
+            const isPlaying = activeOscillators.has(button);
+            console.log(`  Currently playing: ${isPlaying}`);
+
+            if (isPlaying) {
                 const nodes = activeOscillators.get(button);
                 if (nodes.gainNode) {
                     const targetGain = value * masterAmplitude;
                     nodes.gainNode.gain.setValueAtTime(targetGain, audioContext.currentTime);
+                    console.log(`  ✓ Updated playing oscillator gain to ${targetGain.toFixed(3)}`);
                 }
             }
         }
