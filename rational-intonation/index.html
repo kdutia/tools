@@ -1968,7 +1968,9 @@
             const idPrefix = modeRatios ? 'mode' : 'free';
             console.log(`  Mode: ${selectedMode}, idPrefix: ${idPrefix}`);
 
-            const ampSlider = button.querySelector('input[type="range"]:last-of-type');
+            // Get all range inputs and select the second one (amplitude, not pan)
+            const rangeInputs = button.querySelectorAll('input[type="range"]');
+            const ampSlider = rangeInputs.length >= 2 ? rangeInputs[1] : null;
             const ampValueSpan = document.getElementById(`amp-value-${idPrefix}-${pitchIndex}`);
 
             console.log(`  ampSlider found:`, ampSlider !== null);
