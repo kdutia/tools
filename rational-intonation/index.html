@@ -342,6 +342,112 @@
             border-top: 1px solid #000;
         }
 
+        /* MIDI Controller Styles */
+        .midi-status {
+            padding: 10px 15px;
+            border: 2px solid #000;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .midi-status.connected {
+            background: #e8f5e9;
+        }
+
+        .midi-status.disconnected {
+            background: #fff;
+        }
+
+        .midi-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+            border: 2px solid #000;
+        }
+
+        .midi-indicator.connected {
+            background: #4caf50;
+        }
+
+        .midi-indicator.activity {
+            background: #ff9800;
+        }
+
+        .midi-device-select {
+            width: 100%;
+            background: #fff;
+            border: 2px solid #000;
+            color: #000;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .midi-fader-display {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f5f5f5;
+            border: 2px solid #000;
+        }
+
+        .fader-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .fader-label {
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .fader-bar {
+            width: 20px;
+            height: 80px;
+            background: #ddd;
+            border: 1px solid #000;
+            position: relative;
+        }
+
+        .fader-bar-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #000;
+            transition: height 0.05s;
+        }
+
+        .fader-value {
+            font-size: 0.65rem;
+            opacity: 0.7;
+        }
+
+        .midi-mapping-info {
+            font-size: 0.8rem;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-left: 3px solid #000;
+        }
+
+        .midi-mapping-info code {
+            background: #eee;
+            padding: 2px 5px;
+            font-size: 0.75rem;
+        }
+
         /* Dark mode */
         @media (prefers-color-scheme: dark) {
             body {
@@ -482,6 +588,23 @@
                 background: #fff;
                 border-color: #fff;
             }
+
+            .midi-status {
+                background: #1a1a1a;
+                border-color: #fff;
+            }
+
+            .midi-status.connected {
+                background: #1a3a1a;
+            }
+
+            .midi-fader-display {
+                background: #1a1a1a;
+            }
+
+            .fader-bar-fill {
+                background: #fff;
+            }
         }
 
         @media (max-width: 600px) {
@@ -586,6 +709,111 @@
                 <strong>7-limit</strong>: Septimal intervals with distinctive "blue note" qualities<br>
                 <strong>11-limit</strong>: Extended harmony with neutral intervals (used by Kali Malone)<br>
                 <strong>13-limit</strong>: Extremely subtle microtonal inflections (used by Ben Johnston)
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>MICHIGAN XVI FADERBANK</label>
+            <div class="midi-status disconnected" id="midiStatus">
+                <span class="midi-indicator" id="midiIndicator"></span>
+                <span id="midiStatusText">MIDI not available</span>
+            </div>
+            <select class="midi-device-select" id="midiDeviceSelect" disabled>
+                <option value="">-- Select MIDI Device --</option>
+            </select>
+            <div class="midi-fader-display" id="midiFaderDisplay">
+                <!-- Faders 1-8 -->
+                <div class="fader-column">
+                    <div class="fader-label">1<br>AMP</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-0" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-0">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">2<br>P1</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-1" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-1">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">3<br>P2</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-2" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-2">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">4<br>P3</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-3" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-3">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">5<br>P4</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-4" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-4">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">6<br>P5</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-5" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-5">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">7<br>P6</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-6" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-6">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">8<br>P7</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-7" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-7">0</div>
+                </div>
+            </div>
+            <div class="midi-fader-display" id="midiFaderDisplay2" style="margin-top: 8px;">
+                <!-- Faders 9-16 -->
+                <div class="fader-column">
+                    <div class="fader-label">9<br>P8</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-8" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-8">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">10<br>P9</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-9" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-9">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">11<br>P10</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-10" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-10">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">12<br>FADE</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-11" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-11">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">13<br>ROOT</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-12" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-12">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">14<br>---</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-13" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-13">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">15<br>---</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-14" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-14">0</div>
+                </div>
+                <div class="fader-column">
+                    <div class="fader-label">16<br>---</div>
+                    <div class="fader-bar"><div class="fader-bar-fill" id="fader-15" style="height: 0%"></div></div>
+                    <div class="fader-value" id="fader-val-15">0</div>
+                </div>
+            </div>
+            <div class="midi-mapping-info">
+                <strong>FADER MAPPING:</strong><br>
+                <code>1</code> Master Amplitude |
+                <code>2-11</code> Pitch Amplitudes (P1-P10) |
+                <code>12</code> Fade Time |
+                <code>13</code> Root Frequency<br>
+                <em>Michigan XVI sends CC 0-15 on channel 1 by default</em>
             </div>
         </div>
 
@@ -1433,6 +1661,323 @@
                 unlockAudio();
             }
         }, { once: true });
+
+        // =====================================================
+        // MICHIGAN XVI FADERBANK - WEB MIDI API SUPPORT
+        // =====================================================
+
+        let midiAccess = null;
+        let selectedMidiInput = null;
+        let midiActivityTimeout = null;
+
+        // Initialize Web MIDI API
+        async function initMIDI() {
+            const statusElement = document.getElementById('midiStatus');
+            const statusText = document.getElementById('midiStatusText');
+            const indicator = document.getElementById('midiIndicator');
+            const deviceSelect = document.getElementById('midiDeviceSelect');
+
+            if (!navigator.requestMIDIAccess) {
+                statusText.textContent = 'Web MIDI API not supported in this browser';
+                return;
+            }
+
+            try {
+                midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+                statusText.textContent = 'MIDI available - select device';
+                deviceSelect.disabled = false;
+
+                // Populate device list
+                updateMIDIDevices();
+
+                // Listen for device changes
+                midiAccess.onstatechange = (e) => {
+                    console.log('MIDI state change:', e.port.name, e.port.state);
+                    updateMIDIDevices();
+                };
+
+            } catch (err) {
+                console.error('Failed to get MIDI access:', err);
+                statusText.textContent = 'MIDI access denied: ' + err.message;
+            }
+        }
+
+        // Update the list of available MIDI devices
+        function updateMIDIDevices() {
+            const deviceSelect = document.getElementById('midiDeviceSelect');
+            const currentValue = deviceSelect.value;
+
+            // Clear existing options
+            deviceSelect.innerHTML = '<option value="">-- Select MIDI Device --</option>';
+
+            // Add available input devices
+            for (const input of midiAccess.inputs.values()) {
+                const option = document.createElement('option');
+                option.value = input.id;
+                option.textContent = input.name || `Unknown Device (${input.id})`;
+
+                // Highlight Michigan XVI if found
+                if (input.name && input.name.toLowerCase().includes('michigan')) {
+                    option.textContent = '★ ' + option.textContent;
+                }
+
+                deviceSelect.appendChild(option);
+            }
+
+            // Restore selection if device still exists
+            if (currentValue) {
+                deviceSelect.value = currentValue;
+                if (!deviceSelect.value) {
+                    // Device was disconnected
+                    disconnectMIDI();
+                }
+            }
+        }
+
+        // Connect to selected MIDI device
+        function connectMIDI(deviceId) {
+            const statusElement = document.getElementById('midiStatus');
+            const statusText = document.getElementById('midiStatusText');
+            const indicator = document.getElementById('midiIndicator');
+
+            // Disconnect previous device
+            if (selectedMidiInput) {
+                selectedMidiInput.onmidimessage = null;
+            }
+
+            if (!deviceId) {
+                disconnectMIDI();
+                return;
+            }
+
+            const input = midiAccess.inputs.get(deviceId);
+            if (!input) {
+                statusText.textContent = 'Device not found';
+                return;
+            }
+
+            selectedMidiInput = input;
+            input.onmidimessage = handleMIDIMessage;
+
+            statusElement.classList.remove('disconnected');
+            statusElement.classList.add('connected');
+            indicator.classList.add('connected');
+            statusText.textContent = 'Connected: ' + input.name;
+
+            console.log('Connected to MIDI device:', input.name);
+        }
+
+        // Disconnect MIDI device
+        function disconnectMIDI() {
+            const statusElement = document.getElementById('midiStatus');
+            const statusText = document.getElementById('midiStatusText');
+            const indicator = document.getElementById('midiIndicator');
+
+            if (selectedMidiInput) {
+                selectedMidiInput.onmidimessage = null;
+                selectedMidiInput = null;
+            }
+
+            statusElement.classList.remove('connected');
+            statusElement.classList.add('disconnected');
+            indicator.classList.remove('connected');
+            indicator.classList.remove('activity');
+            statusText.textContent = 'MIDI available - select device';
+        }
+
+        // Handle incoming MIDI messages
+        function handleMIDIMessage(event) {
+            const [status, data1, data2] = event.data;
+            const messageType = status & 0xF0;
+            const channel = (status & 0x0F) + 1;
+
+            // Show activity indicator
+            showMIDIActivity();
+
+            // Handle Control Change messages (0xB0 = 176)
+            if (messageType === 0xB0) {
+                const ccNumber = data1;
+                const ccValue = data2;
+
+                console.log(`MIDI CC: ch${channel} cc${ccNumber} val${ccValue}`);
+
+                // Update fader display
+                updateFaderDisplay(ccNumber, ccValue);
+
+                // Map CC to controls (Michigan XVI typically sends CC 0-15)
+                handleFaderCC(ccNumber, ccValue);
+            }
+        }
+
+        // Show activity indicator briefly
+        function showMIDIActivity() {
+            const indicator = document.getElementById('midiIndicator');
+            indicator.classList.add('activity');
+
+            if (midiActivityTimeout) {
+                clearTimeout(midiActivityTimeout);
+            }
+
+            midiActivityTimeout = setTimeout(() => {
+                indicator.classList.remove('activity');
+            }, 100);
+        }
+
+        // Update fader visual display
+        function updateFaderDisplay(ccNumber, ccValue) {
+            if (ccNumber < 0 || ccNumber > 15) return;
+
+            const faderFill = document.getElementById(`fader-${ccNumber}`);
+            const faderValue = document.getElementById(`fader-val-${ccNumber}`);
+
+            if (faderFill && faderValue) {
+                const percentage = (ccValue / 127) * 100;
+                faderFill.style.height = percentage + '%';
+                faderValue.textContent = ccValue;
+            }
+        }
+
+        // Map fader CC values to intonation explorer controls
+        function handleFaderCC(ccNumber, ccValue) {
+            const normalizedValue = ccValue / 127; // 0.0 to 1.0
+
+            switch (ccNumber) {
+                case 0: // Fader 1: Master Amplitude
+                    setMasterAmplitude(normalizedValue);
+                    break;
+
+                case 1: // Fader 2: Pitch 1 Amplitude
+                case 2: // Fader 3: Pitch 2 Amplitude
+                case 3: // Fader 4: Pitch 3 Amplitude
+                case 4: // Fader 5: Pitch 4 Amplitude
+                case 5: // Fader 6: Pitch 5 Amplitude
+                case 6: // Fader 7: Pitch 6 Amplitude
+                case 7: // Fader 8: Pitch 7 Amplitude
+                case 8: // Fader 9: Pitch 8 Amplitude
+                case 9: // Fader 10: Pitch 9 Amplitude
+                case 10: // Fader 11: Pitch 10 Amplitude
+                    setPitchAmplitude(ccNumber - 1, normalizedValue);
+                    break;
+
+                case 11: // Fader 12: Fade Time (0-10000ms)
+                    setFadeTime(Math.round(normalizedValue * 10000));
+                    break;
+
+                case 12: // Fader 13: Root Frequency (20-4000 Hz, logarithmic)
+                    // Use logarithmic scaling for more musical control
+                    const minHz = 20;
+                    const maxHz = 4000;
+                    const logMin = Math.log(minHz);
+                    const logMax = Math.log(maxHz);
+                    const logHz = logMin + normalizedValue * (logMax - logMin);
+                    const hz = Math.exp(logHz);
+                    setRootFrequency(hz);
+                    break;
+
+                // Faders 14-16 (CC 13-15) are unassigned - can be customized
+                case 13:
+                case 14:
+                case 15:
+                    // Reserved for future use
+                    break;
+            }
+        }
+
+        // Set master amplitude from MIDI
+        function setMasterAmplitude(value) {
+            masterAmplitude = value;
+            const slider = document.getElementById('masterAmplitude');
+            const display = document.getElementById('masterAmplitudeValue');
+
+            slider.value = value;
+            display.textContent = value.toFixed(2);
+
+            // Update all currently playing oscillators
+            activeOscillators.forEach((nodes, button) => {
+                if (nodes.gainNode) {
+                    const freqText = button.querySelector('.freq-display').textContent;
+                    const frequency = parseFloat(freqText);
+                    const settings = pitchSettings.get(frequency) || { amplitude: 1.0 };
+                    const targetGain = settings.amplitude * masterAmplitude;
+                    nodes.gainNode.gain.setValueAtTime(targetGain, audioContext.currentTime);
+                }
+            });
+        }
+
+        // Set individual pitch amplitude from MIDI
+        function setPitchAmplitude(pitchIndex, value) {
+            // Get the tone buttons in order
+            const toneButtons = document.querySelectorAll('.tone-button');
+            if (pitchIndex >= toneButtons.length) return;
+
+            const button = toneButtons[pitchIndex];
+            const freqText = button.querySelector('.freq-display').textContent;
+            const frequency = parseFloat(freqText);
+
+            // Update pitch settings
+            if (!pitchSettings.has(frequency)) {
+                pitchSettings.set(frequency, { pan: 0, amplitude: 1.0 });
+            }
+            pitchSettings.get(frequency).amplitude = value;
+
+            // Update the slider in the UI
+            const selectedMode = document.getElementById('modeSelect').value;
+            const modeRatios = getModeRatios(selectedMode);
+            const idPrefix = modeRatios ? 'mode' : 'free';
+            const ampSlider = button.querySelector('input[type="range"]:last-of-type');
+            const ampValueSpan = document.getElementById(`amp-value-${idPrefix}-${pitchIndex}`);
+
+            if (ampSlider) {
+                ampSlider.value = value;
+            }
+            if (ampValueSpan) {
+                ampValueSpan.textContent = value.toFixed(2);
+            }
+
+            // Update if currently playing
+            if (activeOscillators.has(button)) {
+                const nodes = activeOscillators.get(button);
+                if (nodes.gainNode) {
+                    const targetGain = value * masterAmplitude;
+                    nodes.gainNode.gain.setValueAtTime(targetGain, audioContext.currentTime);
+                }
+            }
+        }
+
+        // Set fade time from MIDI
+        function setFadeTime(ms) {
+            fadeTimeMs = ms;
+            const slider = document.getElementById('fadeTime');
+            const display = document.getElementById('currentFadeTime');
+
+            slider.value = ms;
+            display.textContent = ms;
+        }
+
+        // Set root frequency from MIDI
+        function setRootFrequency(hz) {
+            // Clamp to valid range
+            hz = Math.max(20, Math.min(4000, hz));
+            hz = Math.round(hz * 100) / 100; // Round to 2 decimal places
+
+            currentAppliedRootHz = hz;
+            const input = document.getElementById('rootHz');
+            const display = document.getElementById('currentRootHz');
+
+            input.value = hz;
+            display.textContent = hz;
+
+            // Regenerate tones with new root
+            generateTones();
+        }
+
+        // Device select event listener
+        document.getElementById('midiDeviceSelect').addEventListener('change', (e) => {
+            connectMIDI(e.target.value);
+        });
+
+        // Initialize MIDI on page load
+        initMIDI();
     </script>
 </body>
 </html>
