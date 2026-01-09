@@ -207,10 +207,15 @@ def export_csv(session: RecordingSession, filepath: Path):
 class RhythmCapture:
     """Global keyboard rhythm capture with terminal UI."""
 
+    # Triple-tap ESC settings
+    ESC_TAP_COUNT = 3
+    ESC_TAP_WINDOW = 1.0  # seconds
+
     def __init__(self):
         self.session = RecordingSession()
         self.is_recording = False
         self.should_exit = False
+        self.esc_tap_times: list[float] = []
 
     def on_press(self, key):
         if not self.is_recording:
@@ -238,14 +243,29 @@ class RhythmCapture:
         self.session.add_event("keydown", key_type, key_name)
         self._print_status()
 
+    def _check_esc_triple_tap(self) -> bool:
+        """Check if ESC was triple-tapped within the time window."""
+        now = time.perf_counter()
+        self.esc_tap_times.append(now)
+
+        # Keep only taps within the window
+        self.esc_tap_times = [t for t in self.esc_tap_times if now - t <= self.ESC_TAP_WINDOW]
+
+        if len(self.esc_tap_times) >= self.ESC_TAP_COUNT:
+            self.esc_tap_times.clear()
+            return True
+        return False
+
     def on_release(self, key):
-        # Check for stop key (Escape)
+        # Check for triple-tap ESC to stop
         if key == keyboard.Key.esc:
-            if self.is_recording:
-                self.stop_recording()
-            else:
-                self.should_exit = True
-            return False  # Stop listener
+            if self._check_esc_triple_tap():
+                if self.is_recording:
+                    self.stop_recording()
+                else:
+                    self.should_exit = True
+                return False  # Stop listener
+            return  # Continue listening
 
         if not self.is_recording:
             return
@@ -289,7 +309,7 @@ class RhythmCapture:
         self.session.start_time = time.perf_counter()
         self.is_recording = True
         print("\n  Recording started! Press keys to capture rhythm...")
-        print("  Press ESC to stop recording.\n")
+        print("  Triple-tap ESC to stop recording.\n")
         self._print_status()
 
     def stop_recording(self):
