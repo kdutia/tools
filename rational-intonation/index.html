@@ -813,7 +813,7 @@
                 <code>2-11</code> Pitch Amplitudes (P1-P10) |
                 <code>12</code> Fade Time |
                 <code>13</code> Root Frequency<br>
-                <em>Michigan XVI sends CC 0-15 on channel 1 by default</em>
+                <em>Michigan XVI sends CC 0-15 or CC 32-47 depending on configuration</em>
             </div>
         </div>
 
@@ -1808,7 +1808,7 @@
                 // Update fader display
                 updateFaderDisplay(ccNumber, ccValue);
 
-                // Map CC to controls (Michigan XVI typically sends CC 0-15)
+                // Map CC to controls (Michigan XVI sends CC 0-15 or CC 32-47)
                 handleFaderCC(ccNumber, ccValue);
             }
         }
@@ -1829,10 +1829,16 @@
 
         // Update fader visual display
         function updateFaderDisplay(ccNumber, ccValue) {
-            if (ccNumber < 0 || ccNumber > 15) return;
+            // Normalize CC number to 0-15 range (support both CC 0-15 and CC 32-47)
+            let faderIndex = ccNumber;
+            if (ccNumber >= 32 && ccNumber <= 47) {
+                faderIndex = ccNumber - 32;
+            } else if (ccNumber < 0 || ccNumber > 15) {
+                return;
+            }
 
-            const faderFill = document.getElementById(`fader-${ccNumber}`);
-            const faderValue = document.getElementById(`fader-val-${ccNumber}`);
+            const faderFill = document.getElementById(`fader-${faderIndex}`);
+            const faderValue = document.getElementById(`fader-val-${faderIndex}`);
 
             if (faderFill && faderValue) {
                 const percentage = (ccValue / 127) * 100;
@@ -1846,7 +1852,18 @@
             const normalizedValue = ccValue / 127; // 0.0 to 1.0
             console.log(`handleFaderCC: CC${ccNumber} = ${ccValue} (normalized: ${normalizedValue.toFixed(3)})`);
 
-            switch (ccNumber) {
+            // Normalize CC number to 0-15 range
+            // Michigan XVI can send CC 0-15 or CC 32-47 depending on configuration
+            let faderIndex = ccNumber;
+            if (ccNumber >= 32 && ccNumber <= 47) {
+                faderIndex = ccNumber - 32;
+                console.log(`  Normalized CC${ccNumber} → fader index ${faderIndex}`);
+            } else if (ccNumber > 15) {
+                console.log(`  CC${ccNumber} outside supported ranges (0-15 or 32-47) - ignoring`);
+                return;
+            }
+
+            switch (faderIndex) {
                 case 0: // Fader 1: Master Amplitude
                     console.log('→ Setting master amplitude');
                     setMasterAmplitude(normalizedValue);
@@ -1862,8 +1879,8 @@
                 case 8: // Fader 9: Pitch 8 Amplitude
                 case 9: // Fader 10: Pitch 9 Amplitude
                 case 10: // Fader 11: Pitch 10 Amplitude
-                    console.log(`→ Setting pitch ${ccNumber} amplitude (pitchIndex: ${ccNumber - 1})`);
-                    setPitchAmplitude(ccNumber - 1, normalizedValue);
+                    console.log(`→ Setting pitch ${faderIndex} amplitude (pitchIndex: ${faderIndex - 1})`);
+                    setPitchAmplitude(faderIndex - 1, normalizedValue);
                     break;
 
                 case 11: // Fader 12: Fade Time (0-10000ms)
@@ -1881,7 +1898,7 @@
                     setRootFrequency(hz);
                     break;
 
-                // Faders 14-16 (CC 13-15) are unassigned - can be customized
+                // Faders 14-16 (index 13-15) are unassigned - can be customized
                 case 13:
                 case 14:
                 case 15:
