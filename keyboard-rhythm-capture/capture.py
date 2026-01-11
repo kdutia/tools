@@ -6,10 +6,14 @@
 # ]
 # ///
 """
-Keyboard Rhythm Capture - Global keypress recorder for music production.
+Keyboard & Mouse Rhythm Capture - Global input recorder for music production.
 
-Captures keyboard press/release timing globally (even when not focused) and
-exports to MIDI, JSON, or CSV for use in DAWs.
+Captures keyboard press/release timing and mouse/trackpad gestures globally
+(even when not focused) and exports to MIDI, JSON, or CSV for use in DAWs.
+
+Supported inputs:
+    - Keyboard: Space key and all other keys (tracked separately)
+    - Mouse: Left click, right click, scroll up/down
 
 Usage:
     uv run capture.py
@@ -26,51 +30,81 @@ from pathlib import Path
 from datetime import datetime
 from typing import Literal
 
-from pynput import keyboard
+from pynput import keyboard, mouse
 
 
 @dataclass
-class KeyEvent:
-    """A single key event with high-resolution timing."""
-    event_type: Literal["keydown", "keyup"]
-    key_type: Literal["space", "other"]
+class InputEvent:
+    """A single input event with high-resolution timing."""
+    event_type: Literal["keydown", "keyup", "click", "scroll"]
+    input_type: Literal["space", "other", "left_click", "right_click", "scroll_up", "scroll_down"]
     time_ms: float
     key_name: str = ""
+
+
+# Alias for backwards compatibility
+KeyEvent = InputEvent
 
 
 @dataclass
 class RecordingSession:
     """Holds all events from a recording session."""
-    events: list[KeyEvent] = field(default_factory=list)
+    events: list[InputEvent] = field(default_factory=list)
     start_time: float = 0.0
+    # Keyboard state
     space_down: bool = False
     other_down: bool = False
+    # Mouse button state
+    left_click_down: bool = False
+    right_click_down: bool = False
 
-    def add_event(self, event_type: str, key_type: str, key_name: str = ""):
+    def add_event(self, event_type: str, input_type: str, key_name: str = ""):
         time_ms = (time.perf_counter() - self.start_time) * 1000
-        self.events.append(KeyEvent(event_type, key_type, time_ms, key_name))
+        self.events.append(InputEvent(event_type, input_type, time_ms, key_name))
 
     def get_notes(self) -> list[dict]:
         """Convert events to note on/off pairs."""
         notes = []
-        pending = {"space": None, "other": None}
+        # Track pending note-on events for sustained inputs (keys and clicks)
+        pending = {"space": None, "other": None, "left_click": None, "right_click": None}
 
         for event in self.events:
             if event.event_type == "keydown":
-                pending[event.key_type] = event.time_ms
-            elif event.event_type == "keyup" and pending[event.key_type] is not None:
+                pending[event.input_type] = event.time_ms
+            elif event.event_type == "keyup" and pending.get(event.input_type) is not None:
                 notes.append({
-                    "key_type": event.key_type,
-                    "start": pending[event.key_type],
+                    "input_type": event.input_type,
+                    "start": pending[event.input_type],
                     "end": event.time_ms
                 })
-                pending[event.key_type] = None
+                pending[event.input_type] = None
+            elif event.event_type == "click":
+                # Click events (mouse button press/release)
+                if event.input_type in pending:
+                    if pending[event.input_type] is None:
+                        # Button pressed
+                        pending[event.input_type] = event.time_ms
+                    else:
+                        # Button released
+                        notes.append({
+                            "input_type": event.input_type,
+                            "start": pending[event.input_type],
+                            "end": event.time_ms
+                        })
+                        pending[event.input_type] = None
+            elif event.event_type == "scroll":
+                # Scroll events are instantaneous - create short notes
+                notes.append({
+                    "input_type": event.input_type,
+                    "start": event.time_ms,
+                    "end": event.time_ms + 50  # 50ms duration for scroll ticks
+                })
 
         # Close any still-held notes
         final_time = self.events[-1].time_ms if self.events else 0
-        for key_type, start in pending.items():
+        for input_type, start in pending.items():
             if start is not None:
-                notes.append({"key_type": key_type, "start": start, "end": final_time})
+                notes.append({"input_type": input_type, "start": start, "end": final_time})
 
         return sorted(notes, key=lambda n: n["start"])
 
@@ -88,8 +122,19 @@ def encode_vlq(value: int) -> bytes:
 
 def generate_midi(session: RecordingSession, tempo: int = 120,
                   other_note: int = 38, space_note: int = 36,
-                  velocity: int = 100) -> bytes:
-    """Generate a MIDI file from the recording session."""
+                  velocity: int = 100,
+                  left_click_note: int = 40, right_click_note: int = 41,
+                  scroll_up_note: int = 42, scroll_down_note: int = 44) -> bytes:
+    """Generate a MIDI file from the recording session.
+
+    Default note mappings (General MIDI drum kit):
+        - Space key: 36 (C1 - Bass Drum)
+        - Other keys: 38 (D1 - Snare)
+        - Left click: 40 (E1 - Electric Snare)
+        - Right click: 41 (F1 - Low Floor Tom)
+        - Scroll up: 42 (F#1 - Closed Hi-Hat)
+        - Scroll down: 44 (G#1 - Pedal Hi-Hat)
+    """
     TICKS_PER_BEAT = 480
     MS_PER_BEAT = 60000 / tempo
 
@@ -152,14 +197,25 @@ def generate_midi(session: RecordingSession, tempo: int = 120,
         return bytes(data)
 
     notes = session.get_notes()
-    other_notes = [n for n in notes if n["key_type"] == "other"]
-    space_notes = [n for n in notes if n["key_type"] == "space"]
+    # Keyboard events
+    other_notes = [n for n in notes if n["input_type"] == "other"]
+    space_notes = [n for n in notes if n["input_type"] == "space"]
+    # Mouse events
+    left_click_notes = [n for n in notes if n["input_type"] == "left_click"]
+    right_click_notes = [n for n in notes if n["input_type"] == "right_click"]
+    scroll_up_notes = [n for n in notes if n["input_type"] == "scroll_up"]
+    scroll_down_notes = [n for n in notes if n["input_type"] == "scroll_down"]
 
     tempo_track = build_tempo_track()
     other_track = build_track(other_notes, "Other Keys", other_note)
     space_track = build_track(space_notes, "Space Key", space_note)
+    left_click_track = build_track(left_click_notes, "Left Click", left_click_note)
+    right_click_track = build_track(right_click_notes, "Right Click", right_click_note)
+    scroll_up_track = build_track(scroll_up_notes, "Scroll Up", scroll_up_note)
+    scroll_down_track = build_track(scroll_down_notes, "Scroll Down", scroll_down_note)
 
-    tracks = [tempo_track, other_track, space_track]
+    tracks = [tempo_track, other_track, space_track,
+              left_click_track, right_click_track, scroll_up_track, scroll_down_track]
 
     # MIDI header
     header = bytearray(b'MThd')
@@ -186,7 +242,7 @@ def export_json(session: RecordingSession, filepath: Path, **settings):
         "events": [
             {
                 "type": e.event_type,
-                "key_type": e.key_type,
+                "input_type": e.input_type,
                 "time_ms": round(e.time_ms, 3),
                 "key": e.key_name
             }
@@ -198,14 +254,14 @@ def export_json(session: RecordingSession, filepath: Path, **settings):
 
 def export_csv(session: RecordingSession, filepath: Path):
     """Export session to CSV format."""
-    lines = ["type,key_type,time_ms,key"]
+    lines = ["type,input_type,time_ms,key"]
     for e in session.events:
-        lines.append(f"{e.event_type},{e.key_type},{e.time_ms:.3f},{e.key_name}")
+        lines.append(f"{e.event_type},{e.input_type},{e.time_ms:.3f},{e.key_name}")
     filepath.write_text("\n".join(lines))
 
 
 class RhythmCapture:
-    """Global keyboard rhythm capture with terminal UI."""
+    """Global keyboard and mouse rhythm capture with terminal UI."""
 
     # Triple-tap ESC settings
     ESC_TAP_COUNT = 3
@@ -216,6 +272,8 @@ class RhythmCapture:
         self.is_recording = False
         self.should_exit = False
         self.esc_tap_times: list[float] = []
+        # Mouse listeners
+        self.mouse_listener = None
 
     def on_press(self, key):
         if not self.is_recording:
@@ -290,25 +348,96 @@ class RhythmCapture:
         self.session.add_event("keyup", key_type, key_name)
         self._print_status()
 
+    def on_click(self, x, y, button, pressed):
+        """Handle mouse click events."""
+        if not self.is_recording:
+            return
+
+        # Determine click type
+        if button == mouse.Button.left:
+            input_type = "left_click"
+            if pressed:
+                if self.session.left_click_down:
+                    return  # Ignore repeat
+                self.session.left_click_down = True
+            else:
+                if not self.session.left_click_down:
+                    return
+                self.session.left_click_down = False
+        elif button == mouse.Button.right:
+            input_type = "right_click"
+            if pressed:
+                if self.session.right_click_down:
+                    return  # Ignore repeat
+                self.session.right_click_down = True
+            else:
+                if not self.session.right_click_down:
+                    return
+                self.session.right_click_down = False
+        else:
+            return  # Ignore middle click and other buttons
+
+        self.session.add_event("click", input_type, f"{button.name}")
+        self._print_status()
+
+    def on_scroll(self, x, y, dx, dy):
+        """Handle mouse scroll events."""
+        if not self.is_recording:
+            return
+
+        # Vertical scroll
+        if dy > 0:
+            input_type = "scroll_up"
+        elif dy < 0:
+            input_type = "scroll_down"
+        else:
+            return  # No vertical scroll
+
+        self.session.add_event("scroll", input_type, f"dy={dy}")
+        self._print_status()
+
     def _print_status(self):
         """Print current status."""
+        # Count keyboard events
         keydowns = [e for e in self.session.events if e.event_type == "keydown"]
-        space_count = len([e for e in keydowns if e.key_type == "space"])
-        other_count = len([e for e in keydowns if e.key_type == "other"])
+        space_count = len([e for e in keydowns if e.input_type == "space"])
+        other_count = len([e for e in keydowns if e.input_type == "other"])
+
+        # Count mouse events
+        click_events = [e for e in self.session.events if e.event_type == "click"]
+        left_click_count = len([e for e in click_events if e.input_type == "left_click"]) // 2  # pairs
+        right_click_count = len([e for e in click_events if e.input_type == "right_click"]) // 2
+
+        scroll_events = [e for e in self.session.events if e.event_type == "scroll"]
+        scroll_up_count = len([e for e in scroll_events if e.input_type == "scroll_up"])
+        scroll_down_count = len([e for e in scroll_events if e.input_type == "scroll_down"])
 
         elapsed = (time.perf_counter() - self.session.start_time) if self.session.start_time else 0
 
-        space_indicator = "[SPACE]" if self.session.space_down else "[ space ]"
-        other_indicator = "[OTHER]" if self.session.other_down else "[ other ]"
+        # Keyboard indicators
+        space_indicator = "[SPACE]" if self.session.space_down else "[space]"
+        other_indicator = "[OTHER]" if self.session.other_down else "[other]"
 
-        print(f"\r  {other_indicator} {other_count:3d}  |  {space_indicator} {space_count:3d}  |  {elapsed:6.2f}s  ", end="", flush=True)
+        # Mouse indicators
+        lclick_indicator = "[LCLK]" if self.session.left_click_down else "[lclk]"
+        rclick_indicator = "[RCLK]" if self.session.right_click_down else "[rclk]"
+
+        # Build status line
+        status = (
+            f"\r  {other_indicator}{other_count:3d} {space_indicator}{space_count:3d} | "
+            f"{lclick_indicator}{left_click_count:3d} {rclick_indicator}{right_click_count:3d} | "
+            f"scroll:{scroll_up_count:2d}up/{scroll_down_count:2d}dn | "
+            f"{elapsed:6.2f}s  "
+        )
+        print(status, end="", flush=True)
 
     def start_recording(self):
         """Start a new recording session."""
         self.session = RecordingSession()
         self.session.start_time = time.perf_counter()
         self.is_recording = True
-        print("\n  Recording started! Press keys to capture rhythm...")
+        print("\n  Recording started! Use keyboard and mouse to capture rhythm...")
+        print("  Tracked: keys, left/right clicks, scroll up/down")
         print("  Triple-tap ESC to stop recording.\n")
         self._print_status()
 
@@ -316,7 +445,7 @@ class RhythmCapture:
         """Stop the current recording."""
         self.is_recording = False
 
-        # Close any held notes
+        # Close any held keyboard keys
         if self.session.space_down:
             self.session.add_event("keyup", "space")
             self.session.space_down = False
@@ -324,22 +453,40 @@ class RhythmCapture:
             self.session.add_event("keyup", "other")
             self.session.other_down = False
 
+        # Close any held mouse buttons
+        if self.session.left_click_down:
+            self.session.add_event("click", "left_click")
+            self.session.left_click_down = False
+        if self.session.right_click_down:
+            self.session.add_event("click", "right_click")
+            self.session.right_click_down = False
+
+        # Count events by type
         keydowns = [e for e in self.session.events if e.event_type == "keydown"]
-        print(f"\n\n  Recording stopped! Captured {len(keydowns)} key events.")
+        clicks = [e for e in self.session.events if e.event_type == "click"]
+        scrolls = [e for e in self.session.events if e.event_type == "scroll"]
+        total = len(keydowns) + len(clicks) // 2 + len(scrolls)
+        print(f"\n\n  Recording stopped! Captured {total} events "
+              f"({len(keydowns)} keys, {len(clicks)//2} clicks, {len(scrolls)} scrolls).")
 
     def export_files(self, tempo: int = 120, other_note: int = 38,
-                     space_note: int = 36, velocity: int = 100):
+                     space_note: int = 36, velocity: int = 100,
+                     left_click_note: int = 40, right_click_note: int = 41,
+                     scroll_up_note: int = 42, scroll_down_note: int = 44):
         """Export the session to all formats."""
         if not self.session.events:
             print("  No events to export!")
             return
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        base_name = f"keyboard-rhythm-{timestamp}"
+        base_name = f"input-rhythm-{timestamp}"
 
         # Export MIDI
         midi_path = Path(f"{base_name}.mid")
-        midi_data = generate_midi(self.session, tempo, other_note, space_note, velocity)
+        midi_data = generate_midi(
+            self.session, tempo, other_note, space_note, velocity,
+            left_click_note, right_click_note, scroll_up_note, scroll_down_note
+        )
         midi_path.write_bytes(midi_data)
         print(f"  Exported: {midi_path}")
 
@@ -347,7 +494,9 @@ class RhythmCapture:
         json_path = Path(f"{base_name}.json")
         export_json(self.session, json_path,
                    tempo=tempo, other_note=other_note,
-                   space_note=space_note, velocity=velocity)
+                   space_note=space_note, velocity=velocity,
+                   left_click_note=left_click_note, right_click_note=right_click_note,
+                   scroll_up_note=scroll_up_note, scroll_down_note=scroll_down_note)
         print(f"  Exported: {json_path}")
 
         # Export CSV
@@ -374,11 +523,13 @@ def get_int_input(prompt: str, default: int, min_val: int, max_val: int) -> int:
 
 
 def main():
-    print("\n" + "=" * 60)
-    print("  KEYBOARD RHYTHM CAPTURE")
-    print("  Capture global keypresses for music production")
-    print("=" * 60)
-    print("\n  Space key is tracked separately from all other keys.")
+    print("\n" + "=" * 70)
+    print("  KEYBOARD & MOUSE RHYTHM CAPTURE")
+    print("  Capture global input events for music production")
+    print("=" * 70)
+    print("\n  Tracked inputs:")
+    print("    - Keyboard: Space key (separate track) + all other keys")
+    print("    - Mouse: Left click, right click, scroll up/down")
     print("  Timing resolution: ~0.1ms (using time.perf_counter)")
     print("\n  NOTE: On macOS, grant Accessibility permissions if prompted.")
     print("        System Preferences > Privacy & Security > Accessibility")
@@ -386,25 +537,37 @@ def main():
     capture = RhythmCapture()
 
     while True:
-        print("\n" + "-" * 60)
+        print("\n" + "-" * 70)
         print("  Commands:")
         print("    [R] Start recording")
         print("    [E] Export last recording")
         print("    [S] Settings")
         print("    [Q] Quit")
-        print("-" * 60)
+        print("-" * 70)
 
         choice = input("\n  Enter command: ").strip().lower()
 
         if choice == 'r':
             capture.start_recording()
 
-            # Start listener - blocks until ESC
-            with keyboard.Listener(
+            # Start both keyboard and mouse listeners
+            keyboard_listener = keyboard.Listener(
                 on_press=capture.on_press,
                 on_release=capture.on_release
-            ) as listener:
-                listener.join()
+            )
+            mouse_listener = mouse.Listener(
+                on_click=capture.on_click,
+                on_scroll=capture.on_scroll
+            )
+
+            keyboard_listener.start()
+            mouse_listener.start()
+
+            # Wait for keyboard listener to stop (triple-tap ESC)
+            keyboard_listener.join()
+
+            # Stop mouse listener when keyboard listener stops
+            mouse_listener.stop()
 
             if capture.should_exit:
                 break
@@ -417,17 +580,29 @@ def main():
             print("\n  Export Settings:")
             tempo = get_int_input("Tempo (BPM)", 120, 20, 300)
 
-            print("\n  Note options: 36=C1(Kick), 38=D1(Snare), 42=F#1(HiHat), 60=C3")
+            print("\n  Keyboard MIDI notes (36=C1/Kick, 38=D1/Snare, 42=F#1/HiHat):")
             other_note = get_int_input("Other keys MIDI note", 38, 0, 127)
             space_note = get_int_input("Space key MIDI note", 36, 0, 127)
-            velocity = get_int_input("Velocity", 100, 1, 127)
+
+            print("\n  Mouse MIDI notes (40=E1, 41=F1, 42=F#1, 44=G#1):")
+            left_click_note = get_int_input("Left click MIDI note", 40, 0, 127)
+            right_click_note = get_int_input("Right click MIDI note", 41, 0, 127)
+            scroll_up_note = get_int_input("Scroll up MIDI note", 42, 0, 127)
+            scroll_down_note = get_int_input("Scroll down MIDI note", 44, 0, 127)
+
+            velocity = get_int_input("\nVelocity", 100, 1, 127)
 
             print()
-            capture.export_files(tempo, other_note, space_note, velocity)
+            capture.export_files(tempo, other_note, space_note, velocity,
+                               left_click_note, right_click_note,
+                               scroll_up_note, scroll_down_note)
 
         elif choice == 's':
             print("\n  Current settings are configured during export.")
-            print("  Default: 120 BPM, Other=D1(38), Space=C1(36), Velocity=100")
+            print("  Defaults:")
+            print("    - Tempo: 120 BPM, Velocity: 100")
+            print("    - Keyboard: Other=38(D1/Snare), Space=36(C1/Kick)")
+            print("    - Mouse: LClick=40(E1), RClick=41(F1), ScrollUp=42(F#1), ScrollDn=44(G#1)")
 
         elif choice == 'q':
             print("\n  Goodbye!")
