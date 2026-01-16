@@ -454,7 +454,7 @@ SynthDef(\differenceTone, {
     Some units may use CC 32-47 - adjust ~midiCCOffset if needed.
 */
 
-~midiCCOffset = 0;  // Change to 32 if your XVI uses CC 32-47
+~midiCCOffset = 32;  // Michigan XVI uses CC 32-47 (change to 0 if yours uses CC 0-15)
 ~midiChannel = nil; // nil = all channels, or set 0-15 for specific channel
 
 ~initMIDI = {
